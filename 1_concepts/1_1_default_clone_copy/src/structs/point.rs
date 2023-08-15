@@ -1,4 +1,6 @@
+use std::fmt::Debug;
 
+#[derive(Debug, Default)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
@@ -7,12 +9,6 @@ pub struct Point {
 impl Point {
     pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
-    }
-}
-
-impl Default for Point {
-    fn default() -> Self {
-        Self { x: 0, y: 0 }
     }
 }
 
@@ -25,13 +21,11 @@ impl Clone for Point {
     }
 }
 
-impl Copy for Point {
-}
-
+impl Copy for Point {}
 
 #[cfg(test)]
 mod tests {
-    use crate::point::point::Point;
+    use crate::structs::point::Point;
 
     #[test]
     fn test_point_new() {
