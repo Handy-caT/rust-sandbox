@@ -11,9 +11,12 @@ Read through [Cargo Book] and become familiar with [Cargo] and its workspaces.
 
 After completing these steps, you should be able to answer (and understand why) the following questions:
 - What memory model [Rust] has? Is it single-threaded or multiple-threaded? Is it synchronous or asynchronous?
+#### Rust does not yet have a defined memory model. Various academics and industry professionals are working on various proposals, but for now, this is an under-defined place in the language.
+#### Rust is a multi-threaded language. Rust has no runtime, so it is not synchronous or asynchronous. 
 - What runtime [Rust] has? Does it use a GC (garbage collector)?
+#### Rust has no runtime. Rust does not use a GC.
 #### Rust takes a different path: the memory is automatically returned once the variable that owns it goes out of scope.
-
+#### Not in the typical sense used by languages such as Java, but parts of the Rust standard library can be considered a “runtime”, providing a heap, backtraces, unwinding, and stack guards. There is a small amount of initialization code that runs before the user’s main function.
 - What statically typing means? What is a benefit of using it?
 #### Keep in mind that Rust is a statically typed language, which means that it must know the types of all variables at compile time. The compiler can usually infer what type we want to use based on the value and how we use it.
 - What are generics and parametric polymorphism? Which problems do they solve?
@@ -30,16 +33,27 @@ After completing these steps, you should be able to answer (and understand why) 
 #### A crate is the smallest amount of code that the Rust compiler considers at a time. A crate can come in one of two forms: a binary crate or a library crate.
 #### Modules let us organize code within a crate for readability and easy reuse. Modules also allow us to control the privacy of items, because code within a module is private by default.
 - What are move semantics? What are borrowing rules? What is the benefit of using them?
+#### Move semantics is a feature of Rust that allows us to reuse data in place, without copying it. This is done by transferring ownership of the data from one variable to another.
+#### Borrowing is a fea ture of Rust that allows us to reuse data in place, without moving it. This is done by passing a reference to the data to another variable or function.
+#### Borrowing rules are: 1. At any given time, you can have either one mutable reference or any number of immutable references. 2. References must always be valid.
 - What is immutability? What is the benefit of using it?
 #### The benefit of immutability is that it makes your code easier to reason about. If you know a value can’t change, you never have to spend time worrying about whether its value has changed in some other part of your program.
 - What is cloning? What is copying? How do they compare?
 #### Clone is used for heap allocated data, Copy is used for stack allocated data.
+#### Copy refers to stack allocated data. Copy is implicitly used when a variable is assigned to another variable. Copy is also used when passing a variable to a function.
 #### You can't implement Copy for types that implement Drop.
 - What is RAII? How is it implemented in [Rust]? What is the benefit of using it?
 #### Note: In C++, this pattern of deallocating resources at the end of an item’s lifetime is sometimes called Resource Acquisition Is Initialization (RAII). The drop function in Rust will be familiar to you if you’ve used RAII patterns.
+#### RAII is a terrible name. OBRM (Ownership-Based Resource Management) is used in Rust sometimes, and is a much better name.
 - What is an iterator? What is a collection? How do they differ? How are they used?
 #### Rust’s standard library includes a number of very useful data structures called collections. Most other data types represent one specific value, but collections can contain multiple values. Unlike the built-in array and tuple types, the data these collections point to is stored on the heap, which means the amount of data does not need to be known at compile time and can grow or shrink as the program runs.
+#### The iterator pattern allows you to perform some task on a sequence of items in turn. An iterator is responsible for the logic of iterating over each item and determining when the sequence has finished. When you use iterators, you don’t have to reimplement that logic yourself.
+#### In Rust, iterators are lazy, meaning they have no effect until you call methods that consume the iterator to use it up.
 - What are macros? Which problems do they solve? What is the difference between declarative and procedural macro?
+#### Fundamentally, macros are a way of writing code that writes other code, which is known as metaprogramming. Metaprogramming is useful for reducing the amount of code you have to write and maintain, which is one of the reasons macros are useful to use.
+#### A function signature must declare the number and type of parameters the function has. Macros, on the other hand, can take a variable number of parameters.
+#### The second form of macros is the procedural macro, which acts more like a function (and is a type of procedure). Procedural macros accept some code as an input, operate on that code, and produce some code as an output rather than matching against patterns and replacing the code with other code as declarative macros do.
+#### The three kinds of procedural macros are custom derive, attribute-like, and function-like, and all work in a similar fashion.
 - How code is tested in [Rust]? Where should you put tests and why?
 #### Tests are Rust functions that verify that the non-test code is functioning in the expected manner. They usually perform 3 actions: Set up any needed data or state, Run the code you want to test, Assert the results are what you expect.
 #### Tests are put in the same file as the code they are testing. The convention is to create a module named tests in each file to contain the test functions and to annotate the module with cfg(test).
