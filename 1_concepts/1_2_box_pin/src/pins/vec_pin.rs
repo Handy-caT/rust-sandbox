@@ -8,9 +8,9 @@ where T: Debug {
 }
 
 impl<T> MutMeSomehow for Vec<T>
-where T: Debug + Default {
+where T: Debug + Default + Unpin {
     fn mut_me_somehow(self: Pin<&mut Self>) {
-        let this = unsafe { self.get_unchecked_mut() };
+        let this = self.get_mut();
         println!("mut_me_somehow: before: {:?}", this);
         this.push(T::default());
         println!("mut_me_somehow: after: {:?}", this);
