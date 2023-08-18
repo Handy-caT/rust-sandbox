@@ -11,3 +11,8 @@ impl Point {
         Self { x, y }
     }
 }
+
+pub struct MeasurableFuture<Fut> {
+    pub(crate) inner_future: Fut,
+    pub(crate) started_at: Option<std::time::Instant>,
+}
