@@ -38,7 +38,10 @@ After completing these steps, you should be able to answer (and understand why) 
 #### A blanket implementation is an implementation of a trait on a generic parameter: it applies to any type that satisfies the trait bounds.
 #### In Rust, "trait coherence" (or simply "coherence") is the property that there is at most one implementation of a trait for any given type.
 #### Rust enforces trait coherence through two sets of rules.
+#### Автотрейты это элемент структурной типизации в расте
 - What are static and dynamic dispatches? Which should I use, and when?
+#### Диспетчеризация это вызов функции в условиях полиморфизма.
+#### Статическая типизация это когда компилятор знает типы всех переменных во время компиляции.
 #### While Rust favors static dispatch, it also supports dynamic dispatch through a mechanism called 'trait objects.'
 #### This has some upsides: static dispatching of any method calls, allowing for inlining and hence usually higher performance. It also has some downsides: causing code bloat due to many copies of the same function existing in the binary, one for each type
 #### Static dispatch is when the compiler knows which method you’re calling at compile time. Dynamic dispatch is when the compiler can’t know which method you’re calling until runtime.
@@ -54,6 +57,7 @@ After completing these steps, you should be able to answer (and understand why) 
 #### Partial move
 - What is immutability? What is the benefit of using it?
 #### The benefit of immutability is that it makes your code easier to reason about. If you know a value can’t change, you never have to spend time worrying about whether its value has changed in some other part of your program.
+#### Один из плюссов это эргономика. 
 - What is cloning? What is copying? How do they compare?
 #### Clone is used for heap allocated data, Copy is used for stack allocated data.
 #### Copy refers to stack allocated data. Copy is implicitly used when a variable is assigned to another variable. Copy is also used when passing a variable to a function.
@@ -70,6 +74,8 @@ After completing these steps, you should be able to answer (and understand why) 
 #### A function signature must declare the number and type of parameters the function has. Macros, on the other hand, can take a variable number of parameters.
 #### The second form of macros is the procedural macro, which acts more like a function (and is a type of procedure). Procedural macros accept some code as an input, operate on that code, and produce some code as an output rather than matching against patterns and replacing the code with other code as declarative macros do.
 #### The three kinds of procedural macros are custom derive, attribute-like, and function-like, and all work in a similar fashion.
+#### Расширение языка.
+#### Декларативные языки гарантируют гигену. Гигиена это то как макрос при раскрытии меняет код снаружи. Код раскрываясь может неявно вызывать ошибки. В декларативных макросах компилятор делет дополнителные действия для предотвращения.
 - How code is tested in [Rust]? Where should you put tests and why?
 #### Tests are Rust functions that verify that the non-test code is functioning in the expected manner. They usually perform 3 actions: Set up any needed data or state, Run the code you want to test, Assert the results are what you expect.
 #### Tests are put in the same file as the code they are testing. The convention is to create a module named tests in each file to contain the test functions and to annotate the module with cfg(test).
