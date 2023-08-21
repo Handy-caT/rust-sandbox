@@ -1,6 +1,7 @@
 use std::collections::{HashMap};
 use std::hash::Hash;
 use crate::base::Storage;
+use crate::user::User;
 
 pub struct HashTableStorage<K, V> {
     data: HashMap<K, V>,
