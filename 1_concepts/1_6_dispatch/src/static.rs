@@ -1,12 +1,12 @@
 use crate::base::{Storage, UserRepository};
 use crate::user::User;
 
-struct StaticUserRepository<S> {
+pub struct StaticUserRepository<S> {
     storage: S,
 }
 
 impl<S> StaticUserRepository<S> {
-    fn new(storage: S) -> Self {
+    pub fn new(storage: S) -> Self {
         Self { storage }
     }
 }

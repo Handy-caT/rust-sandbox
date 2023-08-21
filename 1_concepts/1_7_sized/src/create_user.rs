@@ -7,14 +7,14 @@ pub struct CreateUser {
 
 impl CreateUser {
     pub fn new() -> Self {
-        Self
+        Self{}
     }
 }
 
 impl Command for CreateUser {
     type Context = dyn UserRepository;
 
-    fn execute(&self, ctx: &Self::Context, user: &User) {
+    fn execute(&self, ctx: &mut Self::Context, user: &User) {
         ctx.add(user);
     }
 }
