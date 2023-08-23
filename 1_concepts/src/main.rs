@@ -4,6 +4,8 @@ use crate::list::List;
 mod doubly_linked_list;
 mod list_node;
 mod list;
+mod parallel_list;
+mod parallel_node;
 
 fn main() {
     let mut list = DoublyLinkedList::<u32>::new();

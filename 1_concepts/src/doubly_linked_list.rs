@@ -90,8 +90,6 @@ impl<T> DoublyLinkedList<T> {
         }
     }
 
-
-
     fn get_node(&self, index: usize) -> Option<Node<T>> {
         if index >= self.length {
             return None;
@@ -104,6 +102,10 @@ impl<T> DoublyLinkedList<T> {
         }
 
         node
+    }
+    
+    pub fn length(&self) -> usize {
+        self.length
     }
 }
 
