@@ -6,6 +6,7 @@ mod list_node;
 mod list;
 mod parallel_list;
 mod parallel_node;
+mod real_parallel_list;
 
 fn main() {
     let mut list = DoublyLinkedList::<u32>::new();

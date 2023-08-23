@@ -103,7 +103,7 @@ impl<T> DoublyLinkedList<T> {
 
         node
     }
-    
+
     pub fn length(&self) -> usize {
         self.length
     }
@@ -163,35 +163,35 @@ where T: Copy
         Some(value)
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        if index >= self.length {
-            return None;
-        }
-
-        if index == self.length - 1 {
-            return self.pop();
-        } else if index == 0 {
-            let head = self.head.take().unwrap();
-            let value = head.borrow_mut().value;
-            let next = head.borrow().next.clone().unwrap();
-
-            DoublyLinkedList::pop_node_left(next.clone());
-
-            self.head = Some(next);
-            self.length -= 1;
-
-            return Some(value);
-        }
-
-        let node = self.get_node(index).unwrap();
-        let value = node.borrow().value;
-        let prev = node.borrow().prev.clone().unwrap().upgrade().unwrap();
-
-        DoublyLinkedList::pop_node_right(prev.clone());
-
-        self.length -= 1;
-        Some(value)
-    }
+    // fn remove(&mut self, index: usize) -> Option<T> {
+    //     if index >= self.length {
+    //         return None;
+    //     }
+    //
+    //     if index == self.length - 1 {
+    //         return self.pop();
+    //     } else if index == 0 {
+    //         let head = self.head.take().unwrap();
+    //         let value = head.borrow_mut().value;
+    //         let next = head.borrow().next.clone().unwrap();
+    //
+    //         DoublyLinkedList::pop_node_left(next.clone());
+    //
+    //         self.head = Some(next);
+    //         self.length -= 1;
+    //
+    //         return Some(value);
+    //     }
+    //
+    //     let node = self.get_node(index).unwrap();
+    //     let value = node.borrow().value;
+    //     let prev = node.borrow().prev.clone().unwrap().upgrade().unwrap();
+    //
+    //     DoublyLinkedList::pop_node_right(prev.clone());
+    //
+    //     self.length -= 1;
+    //     Some(value)
+    // }
 
     fn update(&mut self, index: usize, value: T) -> Option<T> {
         if index >= self.length {
@@ -318,35 +318,35 @@ mod tests {
         assert!(list.tail.is_none());
     }
 
-    #[test]
-    fn test_doubly_linked_list_remove() {
-        let mut list = DoublyLinkedList::<u32>::new();
-
-        list.push(1);
-        list.push(2);
-        list.push(3);
-
-        assert_eq!(list.remove(1), Some(2));
-        assert_eq!(list.remove(1), Some(3));
-        assert_eq!(list.remove(1), None);
-        assert_eq!(list.remove(0), Some(1));
-
-        assert_eq!(list.length, 0);
-    }
-
-    #[test]
-    fn test_doubly_linked_list_remove_head() {
-        let mut list = DoublyLinkedList::<u32>::new();
-
-        list.push(1);
-        list.push(2);
-        list.push(3);
-
-        assert_eq!(list.remove(0), Some(1));
-        assert_eq!(list.remove(0), Some(2));
-        assert_eq!(list.remove(0), Some(3));
-
-        assert_eq!(list.remove(0), None);
-    }
+    // #[test]
+    // fn test_doubly_linked_list_remove() {
+    //     let mut list = DoublyLinkedList::<u32>::new();
+    //
+    //     list.push(1);
+    //     list.push(2);
+    //     list.push(3);
+    //
+    //     assert_eq!(list.remove(1), Some(2));
+    //     assert_eq!(list.remove(1), Some(3));
+    //     assert_eq!(list.remove(1), None);
+    //     assert_eq!(list.remove(0), Some(1));
+    //
+    //     assert_eq!(list.length, 0);
+    // }
+    //
+    // #[test]
+    // fn test_doubly_linked_list_remove_head() {
+    //     let mut list = DoublyLinkedList::<u32>::new();
+    //
+    //     list.push(1);
+    //     list.push(2);
+    //     list.push(3);
+    //
+    //     assert_eq!(list.remove(0), Some(1));
+    //     assert_eq!(list.remove(0), Some(2));
+    //     assert_eq!(list.remove(0), Some(3));
+    //
+    //     assert_eq!(list.remove(0), None);
+    // }
 
 }

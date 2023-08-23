@@ -19,12 +19,12 @@ pub trait List<T> {
     /// * `Option<T>` - The value from the list
     fn get(&self, index: usize) -> Option<T>;
     
-    /// Remove a value from the list by index
-    /// # Arguments
-    /// * `index` - The index of the value to remove
-    /// # Returns
-    /// * `Option<T>` - The value from the list
-    fn remove(&mut self, index: usize) -> Option<T>;
+    // /// Remove a value from the list by index
+    // /// # Arguments
+    // /// * `index` - The index of the value to remove
+    // /// # Returns
+    // /// * `Option<T>` - The value from the list
+    // fn remove(&mut self, index: usize) -> Option<T>;
 
     /// Update a value in the list by index
     /// # Arguments

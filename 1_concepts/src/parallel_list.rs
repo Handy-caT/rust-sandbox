@@ -45,10 +45,10 @@ where T: Copy
         list.get(index)
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        let mut list = self.list.lock().unwrap();
-        list.remove(index)
-    }
+    // fn remove(&mut self, index: usize) -> Option<T> {
+    //     let mut list = self.list.lock().unwrap();
+    //     list.remove(index)
+    // }
 
     fn update(&mut self, index: usize, value: T) -> Option<T> {
         let mut list = self.list.lock().unwrap();

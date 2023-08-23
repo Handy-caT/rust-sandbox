@@ -3,16 +3,16 @@ use std::sync::{Arc, Mutex};
 
 pub struct ParallelNode<T> {
     pub value: T,
-    pub next: Arc<Mutex<Option<ParallelNode<T>>>>,
-    pub prev: Weak<Mutex<Option<ParallelNode<T>>>>
+    pub next: Option<Arc<Mutex<ParallelNode<T>>>>,
+    pub prev: Option<Weak<Mutex<ParallelNode<T>>>>
 }
 
 impl<T> ParallelNode<T> {
     pub fn new(value: T) -> Self {
         ParallelNode {
             value,
-            next: Arc::new(Mutex::new(None)),
-            prev: Arc::downgrade(&Arc::new(Mutex::new(None))),
+            next: None,
+            prev: None,
         }
     }
 }
@@ -25,7 +25,7 @@ mod tests {
     fn test_parallel_node() {
         let node = ParallelNode::new(1);
         assert_eq!(node.value, 1);
-        assert!(node.next.lock().unwrap().is_none());
-        assert!(node.prev.upgrade().is_none());
+        assert!(node.next.is_none());
+        assert!(node.prev.is_none());
     }
 }
