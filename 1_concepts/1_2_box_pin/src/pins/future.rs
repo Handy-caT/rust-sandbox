@@ -9,11 +9,11 @@ where Fut: Future
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = unsafe { self.get_unchecked_mut() };
+        let this = self.project();
         if this.started_at.is_none() {
-            this.started_at = Some(std::time::Instant::now());
+            *this.started_at = Some(std::time::Instant::now());
         }
-        let inner_future = unsafe { Pin::new_unchecked(&mut this.inner_future)};
+        let inner_future = this.inner_future;
         match inner_future.poll(cx) {
             Poll::Ready(_) => {
                 let elapsed = this.started_at.unwrap().elapsed();

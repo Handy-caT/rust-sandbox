@@ -1,4 +1,5 @@
 use std::fmt::{Debug};
+use pin_project::pin_project;
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Point {
@@ -12,7 +13,9 @@ impl Point {
     }
 }
 
+#[pin_project]
 pub struct MeasurableFuture<Fut> {
+    #[pin]
     pub(crate) inner_future: Fut,
     pub(crate) started_at: Option<std::time::Instant>,
 }
