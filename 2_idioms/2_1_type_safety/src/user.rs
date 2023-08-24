@@ -1,3 +1,3 @@
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Id(u64);
+pub struct Id(pub u64);

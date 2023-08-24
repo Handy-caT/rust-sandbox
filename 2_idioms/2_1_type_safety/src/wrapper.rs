@@ -1,24 +1,9 @@
-use crate::post::Post;
 
+#[derive(Debug, PartialEq)]
 pub struct New();
+#[derive(Debug, PartialEq)]
 pub struct Unmoderated();
+#[derive(Debug, PartialEq)]
 pub struct Published();
+#[derive(Debug, PartialEq)]
 pub struct Deleted();
-
-pub enum PostWrapper {
-    New(Post<New>),
-    Unmoderated(Post<Unmoderated>),
-    Published(Post<Published>),
-    Deleted(Post<Deleted>),
-}
-
-pub struct PostFactory {
-    post: PostWrapper
-}
-
-impl PostFactory {
-    pub fn new() -> Post<New> {
-
-    }
-
-}
