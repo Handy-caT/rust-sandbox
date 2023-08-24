@@ -6,43 +6,6 @@ where T: Send {
     value: RefCell<T>
 }
 
-unsafe impl<T> Send for OnlySend<T>
-where T: Send {
-}
-
-struct OnlySync<T>
-{
-    value: Rc<T>
-}
-
-impl <T> OnlySync<T>
-where T: Sync {
-    fn new(value: T) -> Self {
-        Self {
-            value: Rc::new(value)
-        }
-    }
-
-    fn clone(&mut self) -> Self {
-        Self {
-            value: self.value.clone()
-        }
-    }
-
-    fn get(&self) -> &T {
-        &self.value
-    }
-
-    fn get_mut(&mut self) -> &mut T {
-        Rc::get_mut(&mut self.value).unwrap()
-    }
-}
-
-unsafe impl<T> Sync for OnlySync<T>
-where T: Sync {
-}
-
-
 struct NotSyncNotSend<T> {
     value: Rc<T>
 }
@@ -63,9 +26,35 @@ struct SyncAndSend {
     value: u32
 }
 
+#[cfg(test)]
+mod tests {
+    use std::cell::RefCell;
+    use crate::types::{OnlySend, SyncAndSend};
 
-unsafe impl Send for SyncAndSend {
-}
+    #[test]
+    fn test_sync_and_send() {
+        let sync_and_send = SyncAndSend { value: 1 };
 
-unsafe impl Sync for SyncAndSend {
+        let handle = std::thread::spawn(move || {
+            println!("sync_and_send send: {}", sync_and_send.value);
+        });
+        handle.join().unwrap();
+
+        let reference = Box::new(sync_and_send);
+
+        let handle = std::thread::spawn(move || {
+            println!("sync_and_send sync: {}", reference.value);
+        });
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn test_only_send() {
+        let only_send = OnlySend { value: RefCell::new(1) };
+
+        let handle = std::thread::spawn(move || {
+            println!("only_send send: {:?}", only_send.value);
+        });
+        handle.join().unwrap();
+    }
 }
