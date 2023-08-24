@@ -48,5 +48,12 @@ mod tests {
         clone.push(3);
 
         assert_eq!(stack.pop(), Some(3));
+
+        let r = &stack;
+        let r2 = &stack;
+
+        r.push(4);
+
+        assert_eq!(r2.pop(), Some(4));
     }
 }
