@@ -4,8 +4,8 @@ use crate::parallel_node::ParallelNode;
 
 type Node<T> = Arc<Mutex<ParallelNode<T>>>;
 
-fn new_node<T>(value: T) -> Option<Node<T>> {
-    Some(Arc::new(Mutex::new(ParallelNode::new(value))))
+fn new_node<T>(value: T) -> Node<T> {
+    Arc::new(Mutex::new(ParallelNode::new(value)))
 }
 
 
@@ -31,8 +31,8 @@ impl<T> ParallelDoublyLinkedList<T> {
         let mut head = self.head.lock().unwrap();
         let mut tail = self.tail.lock().unwrap();
 
-        *head = node.clone();
-        *tail = node;
+        *head = Some(node.clone());
+        *tail = Some(node);
 
         *length = 1;
     }
@@ -40,18 +40,19 @@ impl<T> ParallelDoublyLinkedList<T> {
     /// Function that appends node_right to node_left
     fn append_to_node_right(node_left_link: Node<T>, node_right_link: Node<T>) {
             let mut node_left = node_left_link.lock().unwrap();
+        {
             let mut node_right = node_right_link.lock().unwrap();
 
             node_right.next = None;
             node_right.prev = Some(Arc::downgrade(&node_left_link));
-
-            node_left.next = Some(node_right_link.clone());
+        }
+            node_left.next = Some(node_right_link);
     }
 
     // only pop from tail, so next to left is tail
     fn pop_right(node_left_link: Node<T>) {
         let mut node_left = node_left_link.lock().unwrap();
-        let mut node_right = node_left.next.take().unwrap();
+        let node_right = node_left.next.take().unwrap();
 
         let mut node_right = node_right.lock().unwrap();
 
@@ -100,15 +101,14 @@ where T: Copy
             self.new_head(value);
             Some(0)
         } else {
-            let new_node = new_node(value).unwrap();
+            let new_node = new_node(value);
             let mut length = self.length.lock().unwrap();
             let mut tail_option = self.tail.lock().unwrap();
 
-            let tail = tail_option.as_ref().unwrap();
-
+            let tail = tail_option.take().unwrap();
 
             let index = *length;
-            ParallelDoublyLinkedList::append_to_node_right(tail.clone(), new_node.clone());
+            ParallelDoublyLinkedList::append_to_node_right(tail, new_node.clone());
 
             *tail_option = Some(new_node);
             *length += 1;
@@ -152,11 +152,23 @@ where T: Copy
     }
 
     fn update(&mut self, index: usize, value: T) -> Option<T> {
-        todo!()
+        let node = self.get_node(index);
+        node.map(|n| {
+            let mut n = n.lock().unwrap();
+            let old_value = n.value;
+            n.value = value;
+            old_value
+        })
     }
 
     fn clear(&mut self) {
-        todo!()
+        let mut length = self.length.lock().unwrap();
+        let mut head = self.head.lock().unwrap();
+        let mut tail = self.tail.lock().unwrap();
+
+        *length = 0;
+        *head = None;
+        *tail = None;
     }
 }
 
