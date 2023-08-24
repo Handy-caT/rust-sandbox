@@ -1,6 +1,7 @@
 use crate::base::{Storage, UserRepository};
 use crate::user::User;
 
+
 pub struct StaticUserRepository<S> {
     storage: S,
 }
