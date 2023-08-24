@@ -31,10 +31,13 @@ impl Borrow <str> for EmailString {
     }
 }
 
+fn fn_that_use_str(s: &str) {
+    println!("fn_that_use_str: {}", s);
+}
 
 #[cfg(test)]
 mod tests {
-    use crate::email_string::EmailString;
+    use crate::email_string::{EmailString, fn_that_use_str};
     use std::str::FromStr;
     use std::borrow::Borrow;
 
@@ -71,6 +74,8 @@ mod tests {
     fn test_email_string_as_ref() {
         let email_string = EmailString::from_str("test@gmail.com").unwrap();
         assert_eq!(email_string.as_ref(), "test@gmail.com");
+
+        fn_that_use_str(email_string.as_ref());
     }
 
     #[test]
@@ -78,5 +83,7 @@ mod tests {
         let email_string = EmailString::from_str("test@gmail.com").unwrap();
         let email_string_ref: &str = email_string.borrow();
         assert_eq!(email_string_ref, "test@gmail.com");
+
+        fn_that_use_str(email_string.borrow());
     }
 }
