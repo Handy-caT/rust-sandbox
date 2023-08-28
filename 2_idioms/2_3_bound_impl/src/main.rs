@@ -25,8 +25,6 @@ pub trait Aggregate: Default {
 
 /// An identifier for an aggregate.
 pub trait AggregateId<A>
-where
-    A: Aggregate,
 {
     /// Gets the stringified aggregate identifier.
     fn as_str(&self) -> &str;
