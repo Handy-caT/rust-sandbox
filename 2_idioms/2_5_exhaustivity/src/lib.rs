@@ -8,6 +8,7 @@ pub mod user {
     use super::{event, EventSourced};
 
     #[derive(Debug)]
+    #[non_exhaustive]
     pub struct User {
         pub id: Id,
         pub name: Option<Name>,
@@ -15,6 +16,19 @@ pub mod user {
         pub created_at: CreationDateTime,
         pub last_activity_at: LastActivityDateTime,
         pub deleted_at: Option<DeletionDateTime>,
+    }
+
+    impl Default for User {
+        fn default() -> Self {
+            Self {
+                id: Id(0),
+                name: None,
+                online_since: None,
+                created_at: CreationDateTime(SystemTime::UNIX_EPOCH),
+                last_activity_at: LastActivityDateTime(SystemTime::UNIX_EPOCH),
+                deleted_at: None,
+            }
+        }
     }
 
     impl EventSourced<event::UserCreated> for User {
@@ -62,23 +76,15 @@ pub mod user {
 
     impl EventSourced<Event> for User {
         fn apply(&mut self, ev: &Event) {
-            // Creation
-            if let Event::Created(ev) = ev {
-                self.apply(ev);
-                return;
-            }
-            // Online/Offline
-            if let Event::Online(ev) = ev {
-                self.apply(ev);
-                return;
-            }
-            if let Event::Offline(ev) = ev {
-                self.apply(ev);
-                return;
-            }
-            // Deletion
-            if let Event::Deleted(ev) = ev {
-                self.apply(ev);
+            match ev {
+                // Creation
+                Event::Created(ev) => self.apply(ev),
+                // Online/Offline
+                Event::Online(ev) => self.apply(ev),
+                Event::Offline(ev) => self.apply(ev),
+                // Deletion
+                Event::Deleted(ev) => self.apply(ev),
+                Event::NameUpdated(ev) => self.apply(ev),
             }
         }
     }
