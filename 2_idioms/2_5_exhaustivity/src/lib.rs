@@ -8,7 +8,6 @@ pub mod user {
     use super::{event, EventSourced};
 
     #[derive(Debug)]
-    #[non_exhaustive]
     pub struct User {
         pub id: Id,
         pub name: Option<Name>,
@@ -33,6 +32,11 @@ pub mod user {
 
     impl EventSourced<event::UserCreated> for User {
         fn apply(&mut self, ev: &event::UserCreated) {
+            let event::UserCreated {
+                user_id,
+                at
+            } = ev;
+
             self.id = ev.user_id;
             self.created_at = ev.at;
             self.last_activity_at = LastActivityDateTime(ev.at.0);
@@ -41,18 +45,35 @@ pub mod user {
 
     impl EventSourced<event::UserNameUpdated> for User {
         fn apply(&mut self, ev: &event::UserNameUpdated) {
+            let event::UserNameUpdated {
+                name,
+                user_id,
+                at
+            } = ev;
+
             self.name = ev.name.clone();
+            self.last_activity_at = LastActivityDateTime(ev.at);
         }
     }
 
     impl EventSourced<event::UserBecameOnline> for User {
         fn apply(&mut self, ev: &event::UserBecameOnline) {
+            let event::UserBecameOnline {
+                user_id,
+                at
+            } = ev;
+
             self.online_since = Some(ev.at);
         }
     }
 
     impl EventSourced<event::UserBecameOffline> for User {
         fn apply(&mut self, ev: &event::UserBecameOffline) {
+            let event::UserBecameOffline {
+                user_id,
+                at
+            } = ev;
+
             self.online_since = None;
             self.last_activity_at = LastActivityDateTime(ev.at);
         }
@@ -60,6 +81,11 @@ pub mod user {
 
     impl EventSourced<event::UserDeleted> for User {
         fn apply(&mut self, ev: &event::UserDeleted) {
+            let event::UserDeleted {
+                user_id,
+                at
+            } = ev;
+
             self.deleted_at = Some(ev.at);
             self.last_activity_at = LastActivityDateTime(ev.at.0);
         }
@@ -89,7 +115,7 @@ pub mod user {
         }
     }
 
-    #[derive(Clone, Copy, Debug)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct Id(pub u64);
 
     #[derive(Clone, Debug)]
