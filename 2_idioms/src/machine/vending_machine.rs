@@ -104,23 +104,27 @@ impl<'a> VendingMachine<'a> {
         Ok(())
     }
 
-    pub fn buy_product(&mut self, product: &Product<'a>, coins: Vec<Coin>) -> Result<(Product<'a>, Vec<Coin>), VendingError> {
+    pub fn buy_product(&mut self, product: &Product<'a>, coins: Vec<Coin>) -> Result<(Product<'a>, Vec<Coin>), (VendingError, Vec<Coin>)> {
         self.add_coins(&coins);
         let request = ProductRequest::new(product.clone(), coins);
 
         let request = request.check_availability();
         if !self.check_availability(request.product()) {
-            return Err(VendingError::ProductNotFound(ProductNotFound::new(request.product().clone())));
+            return Err((VendingError::ProductNotFound(ProductNotFound::new(request.product().clone())), Vec::from(request.coins())));
         }
 
         let change_amount = {
             let coins_sum = count_sum(request.coins());
             let products = mem::take(&mut self.products);
-            let price = VendingMachine::get_price_products(&products, request.product())?.0;
+            let price = VendingMachine::get_price_products(&products, request.product());
+            if price.is_err() {
+                return Err((price.unwrap_err(), Vec::from(request.coins())));
+            }
+            let price = price.unwrap().0;
 
             let _ = mem::replace(&mut self.products, products);
             if coins_sum < price as u16 {
-                return Err(VendingError::NotEnoughMoney(NotEnoughMoney::new(coins_sum, request.product().clone())));
+                return Err((VendingError::NotEnoughMoney(NotEnoughMoney::new(coins_sum, request.product().clone())), Vec::from(request.coins())));
             }
 
             coins_sum - price as u16
@@ -130,7 +134,7 @@ impl<'a> VendingMachine<'a> {
         let change = change_counter(&self.purse, change_amount);
         if change.is_none() {
             self.delete_coins(request.coins());
-            return Err(VendingError::NotEnoughChange(NotEnoughChange::new()));
+            return Err((VendingError::NotEnoughChange(NotEnoughChange::new()), Vec::from(request.coins())));
         }
 
         let change = change.unwrap();
@@ -138,7 +142,10 @@ impl<'a> VendingMachine<'a> {
 
         let request = request.accept();
 
-        self.give_product(request.product())?;
+        let res = self.give_product(request.product());
+        if res.is_err() {
+            return Err((res.unwrap_err(), Vec::from(request.coins())));
+        }
 
         Ok((request.product().clone(), change))
     }
@@ -324,6 +331,9 @@ mod tests {
         let result = vending_machine.buy_product(&other_product, coins);
 
         assert!(result.is_err());
+        let result = result.unwrap_err();
+
+        assert_eq!(result.1, vec![Coin::Two(), Coin::Two(), Coin::Two(), Coin::Five(), Coin::Ten()]);
 
         assert_eq!(vending_machine.max_capacity(), 10);
         assert_eq!(vending_machine.available_capacity, 5);
