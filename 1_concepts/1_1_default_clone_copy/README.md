@@ -81,7 +81,7 @@ After completing everything above, you should be able to answer (and understand 
 - What does [`Clone`] mean semantically?
 - What does [`Copy`] mean semantically? How is it connected with [`Clone`]? Which limitations does it have and why?
 
-
+### У всех detive есть проблема что ни вешают лишние
 
 
 [`Clone`]: https://doc.rust-lang.org/std/clone/trait.Clone.html

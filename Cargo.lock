@@ -341,6 +341,9 @@ version = "0.1.0"
 [[package]]
 name = "step_1_7"
 version = "0.1.0"
+dependencies = [
+ "step_1_6",
+]
 
 [[package]]
 name = "step_1_8"
@@ -349,6 +352,9 @@ version = "0.1.0"
 [[package]]
 name = "step_1_9"
 version = "0.1.0"
+dependencies = [
+ "rand",
+]
 
 [[package]]
 name = "step_2"
