@@ -2,7 +2,11 @@ use std::collections::HashMap;
 use std::mem;
 use crate::coin::coin::Coin;
 use crate::machine::change_counter::{change_counter, count_sum};
-use crate::machine::error::bad_price_error::NotEnoughMoneyError;
+use crate::machine::error::bad_price::BadPrice;
+use crate::machine::error::not_enough_capacity::NotEnoughCapacity;
+use crate::machine::error::not_enough_change::NotEnoughChange;
+use crate::machine::error::not_enough_money::NotEnoughMoney;
+use crate::machine::error::product_not_found::ProductNotFound;
 use crate::machine::error::vending_error::VendingError;
 use crate::machine::helpers::{Price, Quantity};
 use crate::machine::product::Product;
@@ -42,10 +46,10 @@ impl<'a> VendingMachine<'a> {
         } else {
             let (price, current_quantity) = self.products.get_mut(&product).unwrap();
             if price != &product.price() {
-                return Err(VendingError::BadPrice);
+                return Err(VendingError::BadPrice(BadPrice::new(product.price().0 as u16, product.clone())));
             }
             if self.available_capacity < quantity.0 {
-                return Err(VendingError::NotEnoughCapacity);
+                return Err(VendingError::NotEnoughCapacity(NotEnoughCapacity::new(self.available_capacity as u16, quantity.0 as u16)));
             }
             current_quantity.0 += quantity.0;
             self.available_capacity -= quantity.0;
@@ -81,11 +85,11 @@ impl<'a> VendingMachine<'a> {
         self.products.get(product).map_or(false, |quantity| quantity.1.0 > 0)
     }
 
-    fn get_price_products(products: &HashMap<Product, (Price, Quantity)>, product: &Product) -> Result<Price, VendingError<'a>> {
-        products.get(product).map_or(Err(VendingError::ProductNotFound), |quantity| Ok(quantity.0))
+    fn get_price_products(products: &HashMap<Product, (Price, Quantity)>, product: &Product<'a>) -> Result<Price, VendingError<'a>> {
+        products.get(product).map_or(Err(VendingError::ProductNotFound(ProductNotFound::new(product.clone()))), |quantity| Ok(quantity.0))
     }
 
-    pub fn get_price(&self, product: &Product) -> Result<Price, VendingError> {
+    pub fn get_price(&self, product: &Product<'a>) -> Result<Price, VendingError> {
         VendingMachine::get_price_products(&self.products, product)
     }
 
@@ -106,7 +110,7 @@ impl<'a> VendingMachine<'a> {
 
         let request = request.check_availability();
         if !self.check_availability(request.product()) {
-            return Err(VendingError::ProductNotFound);
+            return Err(VendingError::ProductNotFound(ProductNotFound::new(request.product().clone())));
         }
 
         let change_amount = {
@@ -116,7 +120,7 @@ impl<'a> VendingMachine<'a> {
 
             let _ = mem::replace(&mut self.products, products);
             if coins_sum < price as u16 {
-                return Err(VendingError::NotEnoughMoney(NotEnoughMoneyError::new(coins_sum, request.product().clone())));
+                return Err(VendingError::NotEnoughMoney(NotEnoughMoney::new(coins_sum, request.product().clone())));
             }
 
             coins_sum - price as u16
@@ -126,7 +130,7 @@ impl<'a> VendingMachine<'a> {
         let change = change_counter(&self.purse, change_amount);
         if change.is_none() {
             self.delete_coins(request.coins());
-            return Err(VendingError::NotEnoughChange);
+            return Err(VendingError::NotEnoughChange(NotEnoughChange::new()));
         }
 
         let change = change.unwrap();

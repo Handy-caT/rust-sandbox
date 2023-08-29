@@ -1,25 +1,37 @@
-use std::error::Error;
+
 use std::fmt::{Debug, Formatter};
-use crate::machine::error::bad_price_error::NotEnoughMoneyError;
+use crate::machine::error::not_enough_money::NotEnoughMoney;
+use crate::machine::error::bad_price::BadPrice;
+use crate::machine::error::not_enough_capacity::NotEnoughCapacity;
+use crate::machine::error::not_enough_change::NotEnoughChange;
+use crate::machine::error::product_not_found::ProductNotFound;
 
 pub enum VendingError<'a> {
-    ProductNotFound,
-    NotEnoughMoney(NotEnoughMoneyError<'a>),
-    BadPrice,
-    NotEnoughChange,
-    NotEnoughCapacity,
+    ProductNotFound(ProductNotFound<'a>),
+    NotEnoughMoney(NotEnoughMoney<'a>),
+    BadPrice(BadPrice<'a>),
+    NotEnoughChange(NotEnoughChange),
+    NotEnoughCapacity(NotEnoughCapacity),
 }
 
 impl<'a> Debug for VendingError<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            VendingError::ProductNotFound => write!(f, "Product not found"),
-            VendingError::NotEnoughMoney(err) => {
-                NotEnoughMoneyError::fmt(err, f)
+            VendingError::ProductNotFound(err) => {
+                ProductNotFound::fmt(err, f)
             }
-            VendingError::NotEnoughChange => write!(f, "Not enough change"),
-            VendingError::NotEnoughCapacity => write!(f, "Not enough capacity"),
-            VendingError::BadPrice => write!(f, "Bad price"),
+            VendingError::NotEnoughMoney(err) => {
+                NotEnoughMoney::fmt(err, f)
+            }
+            VendingError::NotEnoughChange(err) => {
+                NotEnoughChange::fmt(err, f)
+            }
+            VendingError::NotEnoughCapacity(err) => {
+                NotEnoughCapacity::fmt(err, f)
+            }
+            VendingError::BadPrice(err) =>{
+                BadPrice::fmt(err, f)
+            }
         }
     }
 }
