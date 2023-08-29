@@ -2,6 +2,7 @@ mod structs;
 use structs::point::Point;
 use structs::polyline::Polyline;
 
+
 fn main() {
     let p = Point::new(1, 2);
     let p2 = p;
