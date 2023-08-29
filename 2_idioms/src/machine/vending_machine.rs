@@ -93,6 +93,13 @@ impl<'a> VendingMachine<'a> {
         self.products.keys().cloned().collect()
     }
 
+    fn give_product(&mut self, product: &Product<'a>) -> Result<(), VendingError> {
+        let (_, quantity) = self.products.get_mut(product).unwrap();
+        quantity.0 -= 1;
+        self.available_capacity += 1;
+        Ok(())
+    }
+
     pub fn buy_product(&mut self, product: &Product<'a>, coins: Vec<Coin>) -> Result<(Product<'a>, Vec<Coin>), VendingError> {
         self.add_coins(&coins);
         let request = ProductRequest::new(product.clone(), coins);
@@ -107,6 +114,7 @@ impl<'a> VendingMachine<'a> {
             let products = mem::take(&mut self.products);
             let price = VendingMachine::get_price_products(&products, request.product())?.0;
 
+            let _ = mem::replace(&mut self.products, products);
             if coins_sum < price as u16 {
                 return Err(VendingError::NotEnoughMoney(NotEnoughMoneyError::new(coins_sum, request.product().clone())));
             }
@@ -126,8 +134,7 @@ impl<'a> VendingMachine<'a> {
 
         let request = request.accept();
 
-        let (_, quantity) = self.products.get_mut(request.product()).unwrap();
-        *quantity = Quantity(quantity.0 - 1);
+        self.give_product(request.product())?;
 
         Ok((request.product().clone(), change))
     }
@@ -137,6 +144,7 @@ impl<'a> VendingMachine<'a> {
 #[cfg(test)]
 mod tests {
     use crate::coin::coin::Coin;
+    use crate::machine::change_counter::count_sum;
     use crate::machine::helpers::{Price, Quantity};
     use crate::machine::product::Product;
     use crate::machine::vending_machine::VendingMachine;
@@ -255,5 +263,65 @@ mod tests {
         assert_eq!(vending_machine.purse.get(&Coin::One()), Some(&9));
         assert_eq!(vending_machine.purse.get(&Coin::Two()), Some(&9));
         assert_eq!(vending_machine.purse.get(&Coin::Five()), Some(&9));
+    }
+
+    #[test]
+    fn test_buy_product_ok() {
+        let mut vending_machine = VendingMachine::new(10);
+
+        let product = Product::new("Coca-Cola", Price(10));
+        vending_machine.add_product(product.clone(), Quantity(5));
+
+        let coins = vec![Coin::Two(), Coin::Two(), Coin::Two(), Coin::Five()];
+
+        let result = vending_machine.buy_product(&product, coins);
+
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert_eq!(result.0, product);
+        assert_eq!(result.1, vec![Coin::One()]);
+
+        assert_eq!(vending_machine.max_capacity(), 10);
+        assert_eq!(vending_machine.available_capacity, 6);
+    }
+
+    #[test]
+    fn test_buy_product_ok_more_coins() {
+        let mut vending_machine = VendingMachine::new(10);
+
+        let product = Product::new("Coca-Cola", Price(10));
+        vending_machine.add_product(product.clone(), Quantity(5));
+
+        let coins = vec![Coin::Two(), Coin::Two(), Coin::Two(), Coin::Five(), Coin::Ten()];
+
+        let result = vending_machine.buy_product(&product, coins);
+
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert_eq!(result.0, product);
+        assert_eq!(count_sum(&result.1), 11);
+
+        assert_eq!(vending_machine.max_capacity(), 10);
+        assert_eq!(vending_machine.available_capacity, 6);
+    }
+
+    #[test]
+    fn test_buy_product_no_product() {
+        let mut vending_machine = VendingMachine::new(10);
+
+        let product = Product::new("Coca-Cola", Price(10));
+        let other_product = Product::new("Pepsi", Price(10));
+        vending_machine.add_product(product.clone(), Quantity(5));
+
+        let coins = vec![Coin::Two(), Coin::Two(), Coin::Two(), Coin::Five(), Coin::Ten()];
+
+        let result = vending_machine.buy_product(&other_product, coins);
+
+        assert!(result.is_err());
+
+        assert_eq!(vending_machine.max_capacity(), 10);
+        assert_eq!(vending_machine.available_capacity, 5);
     }
 }
