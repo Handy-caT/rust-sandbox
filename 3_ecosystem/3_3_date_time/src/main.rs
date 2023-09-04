@@ -10,16 +10,6 @@ fn main() {
 
 const NOW: &str = "2019-06-26";
 
-fn more_days(month_l: u8, month_r: u8, day_l: u8, day_r: u8) -> bool {
-    if month_l > month_r {
-        true
-    } else if month_l == month_r {
-        day_l > day_r
-    } else {
-        false
-    }
-}
-
 struct User
 {
     birthdate: Date,
@@ -49,7 +39,7 @@ impl User {
 
         if age_years <= 0 {
             0
-        } else if more_days(now.month() as u8, self.birthdate.month() as u8, now.day(), self.birthdate.day()) {
+        } else if now.ordinal() > self.birthdate.ordinal() {
             age_years as u16
         } else {
             (age_years - 1) as u16
