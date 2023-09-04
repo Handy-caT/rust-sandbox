@@ -14,7 +14,7 @@ use::std::collections::BTreeMap;
 use my_proc_macros_lib::btreemap_proc;
 
 fn main() {
-    let map = btreemap! (
+    let mut map = btreemap! (
         ("a", 1),
         ("b", 2),
         ("c", 3)
@@ -22,9 +22,7 @@ fn main() {
 
     println!("{:?}", map);
 
-    btreemap_proc!(
-        ("a", 1),
-        ("b", 2),
-        ("c", 3)
-    );
+    btreemap_proc!(map, ("d",1), ("e",2), ("f",3));
+
+    println!("{:?}", map);
 }

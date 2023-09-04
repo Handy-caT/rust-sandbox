@@ -23,23 +23,16 @@ pub fn btreemap_proc(input: TokenStream) -> TokenStream {
     for x in input {
         if let TokenTree::Group(group) = x {
             let group = proc_macro2::TokenStream::from(group.stream());
-            eprintln!("group: {:?}", group);
 
             tree_inserts.extend(quote!(#map_name));
             tree_inserts.extend(tree_inserts_template.clone());
             tree_inserts.extend(quote!((#group);));
 
-            eprintln!("tree_inserts: {:?}", tree_inserts.to_string());
         }
     }
 
-    let tree_output = quote! {
-        println!("{:?}", map);
-    };
-
     TokenStream::from(quote!(
             #tree_inserts
-            #tree_output
         ))
 }
 
