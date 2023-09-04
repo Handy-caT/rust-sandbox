@@ -5,11 +5,35 @@
 //! [0]: https://docs.rs/itertools/latest/src/itertools/lib.rs.html#2078-2136
 
 use std::fmt;
+use std::iter::Map;
 
 use self::format::{Format, FormatWith};
 
+mod private {
+    use std::iter::Map;
+
+    /// Sealed trait to prevent downstream implementations of `MyIteratorExt`.
+    pub trait Sealed {}
+
+    impl<I, F> Sealed for Map<I, F> {}
+}
+
 /// Extension trait for an [`Iterator`].
-pub trait MyIteratorExt: Iterator {
+/// Compile test
+///```compile_fail
+/// use step_2_6::MyIteratorExt;
+/// struct TestIterator;
+///
+/// impl Iterator for TestIterator {
+///    type Item = i32;
+///   fn next(&mut self) -> Option<Self::Item> {
+///       Some(1)
+///  }
+/// }
+///
+/// impl MyIteratorExt for TestIterator
+/// {}
+pub trait MyIteratorExt: Iterator + private::Sealed {
     /// Format all iterator elements, separated by `sep`.
     ///
     /// All elements are formatted (any formatting trait)
@@ -70,7 +94,11 @@ pub trait MyIteratorExt: Iterator {
     }
 }
 
-impl<T> MyIteratorExt for T where T: Iterator {}
+impl<B, I, F> MyIteratorExt for Map<I, F>
+    where
+        I: Iterator,
+        F: FnMut(<I as Iterator>::Item) -> B,
+{}
 
 mod format {
     use std::{cell::RefCell, fmt};
