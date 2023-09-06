@@ -3,3 +3,9 @@ name = "step_3_8"
 version = "0.1.0"
 edition = "2021"
 publish = false
+
+[dependencies]
+slog = "2.7.0"
+slog-async = "2.8.0"
+slog-json = "2.6.1"
+slog-term = "2.9.0"
