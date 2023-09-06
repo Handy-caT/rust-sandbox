@@ -1,6 +1,7 @@
 use std::io::Error;
 use std::ops::Deref;
 use slog::{Drain, info, Logger, o, OwnedKVList, Record, warn};
+use slog::{FnValue, PushFnValue};
 use std::sync::Mutex;
 use slog_term::{CompactFormat, TermDecorator};
 
@@ -45,20 +46,35 @@ struct AppLogger {
 
 impl AppLogger {
     pub fn new() -> Self {
-        let decorator = TermDecorator::new().stdout().build();
-        let drain_stdout = slog_term::FullFormat::new(decorator).build().fuse();
-        let drain_stdout = slog_async::Async::new(drain_stdout).build().fuse();
+        let drain = slog_json::Json::new(std::io::stdout())
+            .build()
+            .fuse();
+        let drain_stdout = slog_async::Async::new(drain).build().fuse();
 
-        let decorator = TermDecorator::new().stderr().build();
-        let drain_stderr = slog_term::FullFormat::new(decorator).build().fuse();
-        let drain_stderr = slog_async::Async::new(drain_stderr).build().fuse();
+        let drain = slog_json::Json::new(std::io::stderr())
+            .build()
+            .fuse();
+        let drain_stderr = slog_async::Async::new(drain).build().fuse();
 
         let drain = RuntimeLevelFilter::new(drain_stdout, drain_stderr).fuse();
 
 
         let logger = slog::Logger::root(
             drain,
-            o!("file" => "app.log")
+            o!(
+                "file" => "app.log",
+                "time" => FnValue(move |_ : &Record| {
+                    time::OffsetDateTime::now_utc()
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .ok()
+            }),
+                "level" => FnValue(move |rinfo : &Record| {
+                rinfo.level().as_short_str()
+            }),
+                "msg" => PushFnValue(move |record : &Record, ser| {
+                ser.emit(record.msg())
+            }),
+            )
         );
 
         Self {
@@ -80,6 +96,57 @@ impl Deref for AppLogger {
     }
 }
 
+struct FileLogger {
+    logger: slog::Logger,
+}
+
+impl FileLogger {
+    pub fn new() -> Self {
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open("access.log")
+            .unwrap();
+
+        let drain = slog_json::Json::new(file)
+            .build()
+            .fuse();
+
+        let drain = slog_async::Async::new(drain).build().fuse();
+
+        let logger = slog::Logger::root(
+            drain,
+            o!(
+                "file" => "access.log",
+                "time" => FnValue(move |_ : &Record| {
+                    time::OffsetDateTime::now_utc()
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .ok()
+            }),
+                "level" => FnValue(move |rinfo : &Record| {
+                rinfo.level().as_short_str()
+            }),
+                "msg" => PushFnValue(move |record : &Record, ser| {
+                ser.emit(record.msg())
+            }),
+            )
+        );
+
+        Self {
+            logger
+        }
+
+    }
+}
+
+impl Deref for FileLogger {
+    type Target = Logger;
+    fn deref(&self) -> &Self::Target {
+        &self.logger
+    }
+}
+
 
 fn main() {
     let app_logger = AppLogger::new();
@@ -87,6 +154,10 @@ fn main() {
     info!(app_logger.as_ref(), "Starting application");
     warn!(app_logger, "Something is not right");
 
+    let file_logger = FileLogger::new();
 
+    for i in 0..10 {
+        info!(file_logger, "Accessing resource {}", i);
+    }
 
 }
