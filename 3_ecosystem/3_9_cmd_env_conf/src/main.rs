@@ -1,7 +1,5 @@
 mod settings;
 
-use config::{Config, Environment, File};
-use config::ValueKind::String;
 use crate::settings::Settings;
 
 
