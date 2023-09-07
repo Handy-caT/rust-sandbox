@@ -296,10 +296,10 @@ pub struct Settings {
 
 
 impl Settings {
-    pub fn new() -> Result<Self, ConfigError> {
+    pub fn new<S: AsRef<str>>(debug: bool, filename: S) -> Result<Self, ConfigError> {
         let settings = Config::builder()
             // Add in `./Settings.toml`
-            .add_source(File::with_name("config"))
+            .add_source(File::with_name(filename.as_ref()))
             // Add in settings from the environment (with a prefix of APP)
             // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
             .build()
@@ -316,6 +316,7 @@ impl Settings {
                     default_settings.merge(settings);
                 }
 
+                default_settings.mode.debug = Some(debug);
                 Ok(default_settings)
             },
             Err(e) => Err(e),
