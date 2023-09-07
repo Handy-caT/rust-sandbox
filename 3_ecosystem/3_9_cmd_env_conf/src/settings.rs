@@ -316,7 +316,10 @@ impl Settings {
                     default_settings.merge(settings);
                 }
 
-                default_settings.mode.debug = Some(debug);
+                if debug {
+                    default_settings.mode.debug = Some(debug);
+                }
+
                 Ok(default_settings)
             },
             Err(e) => Err(e),
