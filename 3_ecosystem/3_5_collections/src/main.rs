@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use im::{HashMap, OrdMap, Vector};
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -10,9 +11,9 @@ struct User {
 }
 
 trait UserRepository {
-    fn get_user_by_id(&self, id: Id) -> Option<&User>;
-    fn get_users_by_ids(&self, ids: Vec<Id>) -> Result<Vec<&User>, (Vec<&User>, Vec<Id>)>;
-    fn search_contain_nickname(&self, nickname: String) -> Option<Vec<&User>>;
+    fn get_user_by_id(&self, id: Id) -> Option<User>;
+    fn get_users_by_ids(&self, ids: &[Id]) -> std::collections::HashMap<Id, User>;
+    fn search_contain_nickname<S: AsRef<str>>(&self, nickname: S) -> HashSet<User>;
 
 }
 
@@ -33,40 +34,32 @@ impl VecUserRepository {
 }
 
 impl UserRepository for VecUserRepository {
-    fn get_user_by_id(&self, id: Id) -> Option<&User> {
-        self.users.get(&id)
+    fn get_user_by_id(&self, id: Id) -> Option<User> {
+        self.users.get(&id).cloned()
     }
 
-    fn get_users_by_ids(&self, ids: Vec<Id>) -> Result<Vec<&User>, (Vec<&User>, Vec<Id>)> {
-        let mut found_users = Vec::new();
-        let mut not_found_ids = Vec::new();
+    fn get_users_by_ids(&self, ids: &[Id]) -> std::collections::HashMap<Id, User> {
+        let mut found_users = std::collections::HashMap::new();
 
         for id in ids {
-            match self.get_user_by_id(id) {
-                Some(user) => found_users.push(user),
-                None => not_found_ids.push(id),
+            if let Some(user) = self.get_user_by_id(*id) {
+                found_users.insert(*id, user.clone());
             }
         }
 
-        if not_found_ids.is_empty() {
-            Ok(found_users)
-        } else {
-            Err((found_users, not_found_ids))
-        }
+        found_users
     }
 
-    fn search_contain_nickname(&self, nickname: String) -> Option<Vec<&User>> {
-        let mut found_users = Vec::new();
+    fn search_contain_nickname<S: AsRef<str>>(&self, nickname: S) -> HashSet<User> {
+        let mut found_users = HashSet::new();
+        let nickname = nickname.as_ref();
         for user in self.users.values() {
-            if user.nickname.contains(&nickname) {
-                found_users.push(user);
+            if user.nickname.contains(nickname) {
+                found_users.insert(user.clone());
             }
         }
-        if found_users.is_empty() {
-            None
-        } else {
-            Some(found_users)
-        }
+
+        found_users
     }
 }
 
@@ -93,7 +86,7 @@ mod tests {
             nickname: "test".to_string(),
         };
         repo.add_user(user.clone());
-        assert_eq!(repo.get_user_by_id(Id(1)), Some(&user));
+        assert_eq!(repo.get_user_by_id(Id(1)), Some(user));
     }
 
     #[test]
@@ -115,7 +108,10 @@ mod tests {
         };
         repo.add_user(user1.clone());
         repo.add_user(user2.clone());
-        assert_eq!(repo.get_users_by_ids(vec![Id(1), Id(2)]), Ok(vec![&user1, &user2]));
+        let users = repo.get_users_by_ids(vec![Id(1), Id(2)].as_slice());
+        assert_eq!(users.len(), 2);
+        assert_eq!(users.get(&Id(1)), Some(&user1));
+        assert_eq!(users.get(&Id(2)), Some(&user2));
     }
 
     #[test]
@@ -130,7 +126,10 @@ mod tests {
             nickname: "test2".to_string(),
         };
         repo.add_user(user1.clone());
-        assert_eq!(repo.get_users_by_ids(vec![Id(1), Id(2)]), Err((vec![&user1], vec![Id(2)])));
+        let users = repo.get_users_by_ids(vec![Id(1), Id(2)].as_slice());
+        assert_eq!(users.len(), 1);
+        assert_eq!(users.get(&Id(1)), Some(&user1));
+        assert_eq!(users.get(&Id(2)), None);
     }
 
     #[test]
@@ -148,11 +147,9 @@ mod tests {
         repo.add_user(user2.clone());
 
         let result = repo.search_contain_nickname("test".to_string());
-        assert!(result.is_some());
-        let result = result.unwrap();
         assert_eq!(result.len(), 2);
-        assert!(result.contains(&&user1));
-        assert!(result.contains(&&user2));
+        assert!(result.contains(&user1));
+        assert!(result.contains(&user2));
     }
 
     #[test]
@@ -170,6 +167,6 @@ mod tests {
         repo.add_user(user2.clone());
 
         let result = repo.search_contain_nickname("test3".to_string());
-        assert!(result.is_none());
+        assert!(result.is_empty());
     }
 }
