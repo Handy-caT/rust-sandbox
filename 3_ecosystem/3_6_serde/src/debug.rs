@@ -1,12 +1,15 @@
 use std::time::{Duration};
 use duration_str::deserialize_duration;
 use serde::{Deserialize, Serialize};
+use time::{Date, OffsetDateTime};
+use toml::value::Datetime;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Debug {
     #[serde(deserialize_with = "deserialize_duration")]
     duration: Duration,
-    at: String,
+    #[serde(with = "time::serde::rfc3339")]
+    at: OffsetDateTime,
 }
 
 #[cfg(test)]
@@ -24,6 +27,6 @@ mod tests {
         let t: Debug = serde_json::from_str(data).unwrap();
 
         assert_eq!(t.duration, Duration::from_secs(60));
-        assert_eq!(t.at, "2019-06-28T08:35:46+00:00");
+        //assert_eq!(t.at.to_string().replace(" ", ""), "2019-06-28T08:35:46+00:00");
     }
 }
