@@ -16,18 +16,33 @@ fn producer() -> Box<[[u8; 64]; 64]> {
     result
 }
 
-fn consumer(data: Box<[[u8; 64]; 64]>) {
+fn consumer(data: Box<[[u8; 64]; 64]>, id: usize) {
     let sum: u32 = data
         .into_par_iter()
         .map(|row| row.into_par_iter().map(|x| x as u32).sum::<u32>())
         .sum();
 
-    println!("Sum: {}", sum);
+    println!("Sum from {}: {}",id, sum);
 }
 
 
 fn main() {
-    let prod = producer();
-    consumer(prod);
+    // let prod = producer();
+    // consumer(prod);
 
+    let (sender, receiver) = crossbeam_channel::bounded(1);
+
+    let handles = (0..2).map(|i| {
+        let receiver = receiver.clone();
+        std::thread::spawn(move || {
+            while let Ok(data) = receiver.recv() {
+                consumer(data, i);
+            }
+        })
+    }).collect::<Vec<_>>();
+
+    loop {
+        let data = producer();
+        sender.send(data).unwrap();
+    }
 }
