@@ -29,7 +29,7 @@ fn main() {
         let path = filename.file_name().unwrap().to_string_lossy();
         println!("Using config file: {:?}", path);
 
-        let settings = Settings::new(debug, path).unwrap();
+        let settings = Settings::new(debug, path);
 
         // Print out our settings (as a HashMap)
         println!(
@@ -37,7 +37,7 @@ fn main() {
             settings
         );
     } else {
-        let settings = Settings::new(debug, "config").unwrap();
+        let settings = Settings::new(debug, "config");
 
         // Print out our settings (as a HashMap)
         println!(
