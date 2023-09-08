@@ -1,163 +1,53 @@
-use std::io::Error;
+use std::fs;
 use std::ops::Deref;
-use slog::{Drain, info, Logger, o, OwnedKVList, Record, warn};
-use slog::{FnValue, PushFnValue};
-use std::sync::Mutex;
-use slog_term::{CompactFormat, TermDecorator};
-
-
-struct RuntimeLevelFilter<D> {
-    drain_stdout: D,
-    drain_stderr: D,
-}
-
-impl<D> RuntimeLevelFilter<D> where D: Drain {
-    pub fn new(out: D, err: D) -> Self {
-        Self {
-            drain_stdout: out,
-            drain_stderr: err,
-        }
-    }
-}
-
-impl<D> Drain for RuntimeLevelFilter<D>
-where D: Drain {
-    type Ok = Option<D::Ok>;
-    type Err = Option<D::Err>;
-
-    fn log(&self, record: &Record, values: &OwnedKVList) -> Result<Self::Ok, Self::Err> {
-        let level = record.level();
-
-        if level.is_at_least(slog::Level::Warning) {
-            self.drain_stderr.log(record, values)
-                .map(Some)
-                .map_err(Some)?;
-        }
-
-        self.drain_stdout.log(record, values)
-            .map(Some)
-            .map_err(Some)
-    }
-}
-
-struct AppLogger {
-    logger: slog::Logger,
-}
-
-impl AppLogger {
-    pub fn new() -> Self {
-        let drain = slog_json::Json::new(std::io::stdout())
-            .build()
-            .fuse();
-        let drain_stdout = slog_async::Async::new(drain).build().fuse();
-
-        let drain = slog_json::Json::new(std::io::stderr())
-            .build()
-            .fuse();
-        let drain_stderr = slog_async::Async::new(drain).build().fuse();
-
-        let drain = RuntimeLevelFilter::new(drain_stdout, drain_stderr).fuse();
-
-
-        let logger = slog::Logger::root(
-            drain,
-            o!(
-                "file" => "app.log",
-                "time" => FnValue(move |_ : &Record| {
-                    time::OffsetDateTime::now_utc()
-                    .format(&time::format_description::well_known::Rfc3339)
-                    .ok()
-            }),
-                "level" => FnValue(move |rinfo : &Record| {
-                rinfo.level().as_short_str()
-            }),
-                "msg" => PushFnValue(move |record : &Record, ser| {
-                ser.emit(record.msg())
-            }),
-            )
-        );
-
-        Self {
-            logger
-        }
-    }
-}
-
-impl AsRef<Logger> for AppLogger {
-    fn as_ref(&self) -> &Logger {
-        &self.logger
-    }
-}
-
-impl Deref for AppLogger {
-    type Target = Logger;
-    fn deref(&self) -> &Self::Target {
-        &self.logger
-    }
-}
-
-struct FileLogger {
-    logger: slog::Logger,
-}
-
-impl FileLogger {
-    pub fn new() -> Self {
-        let file = std::fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .open("access.log")
-            .unwrap();
-
-        let drain = slog_json::Json::new(file)
-            .build()
-            .fuse();
-
-        let drain = slog_async::Async::new(drain).build().fuse();
-
-        let logger = slog::Logger::root(
-            drain,
-            o!(
-                "file" => "access.log",
-                "time" => FnValue(move |_ : &Record| {
-                    time::OffsetDateTime::now_utc()
-                    .format(&time::format_description::well_known::Rfc3339)
-                    .ok()
-            }),
-                "level" => FnValue(move |rinfo : &Record| {
-                rinfo.level().as_short_str()
-            }),
-                "msg" => PushFnValue(move |record : &Record, ser| {
-                ser.emit(record.msg())
-            }),
-            )
-        );
-
-        Self {
-            logger
-        }
-
-    }
-}
-
-impl Deref for FileLogger {
-    type Target = Logger;
-    fn deref(&self) -> &Self::Target {
-        &self.logger
-    }
-}
+use tracing::{info, Level, warn};
+use tracing_subscriber::filter::Targets;
+use tracing_subscriber::fmt::format::{Format, JsonFields};
+use tracing_subscriber::Layer;
+use tracing_subscriber::fmt::writer::MakeWriterExt;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 
 fn main() {
-    let app_logger = AppLogger::new();
 
-    info!(app_logger.as_ref(), "Starting application");
-    warn!(app_logger, "Something is not right");
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open("access.log")
+        .unwrap();
 
-    let file_logger = FileLogger::new();
+    let local =  tracing_subscriber::fmt::Layer::new()
+        .event_format(Format::default()
+            .json()
+            .flatten_event(true)
+        )
+        .fmt_fields(JsonFields::new())
+        .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339())
+        .with_target(false)
+        .with_writer(file)
+        .with_filter(Targets::new().with_target("local", Level::DEBUG));
 
-    for i in 0..10 {
-        info!(file_logger, "Accessing resource {}", i);
-    }
+    let stderr = std::io::stderr.with_max_level(Level::WARN);
+    let layer =  tracing_subscriber::fmt::Layer::new()
+        .event_format(Format::default()
+            .json()
+            .flatten_event(true)
+        )
+        .fmt_fields(JsonFields::new())
+        .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339())
+        .map_writer(move |out| stderr.or_else(out))
+        .with_target(false);
+
+    tracing_subscriber::registry()
+        .with(local)
+        .with(layer)
+        .init();
+
+    info!(msg = "Starting application");
+    warn!(msg = "Something is not right");
+
+    warn!(target: "local", msg = "Something is not right");
 
 }
