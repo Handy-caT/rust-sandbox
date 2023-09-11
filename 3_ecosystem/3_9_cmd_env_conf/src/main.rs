@@ -1,7 +1,7 @@
 mod settings;
 use std::path::PathBuf;
 
-use clap::{arg, ArgAction, Command, command, Parser, value_parser};
+use clap::{arg, command, Parser, value_parser};
 use crate::settings::Settings;
 
 
