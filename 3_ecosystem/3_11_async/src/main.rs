@@ -15,9 +15,12 @@ fn get_filename_from_link<S: AsRef<str>>(link: &S) -> String {
     last_part
 }
 
-async fn download_by_link<L: AsRef<str>, O: AsRef<str>>(link: L, output_dir: &O) {
+async fn download_by_link<L: AsRef<str>, O: AsRef<str>>(link: L, output_dir: O) {
         let link = link.as_ref();
+        let start = Instant::now();
         println!("link: {}", link);
+        println!("start for link: {:?}", start);
+
         let filename = get_filename_from_link(&link);
         let output_dir = output_dir.as_ref();
 
@@ -31,6 +34,8 @@ async fn download_by_link<L: AsRef<str>, O: AsRef<str>>(link: L, output_dir: &O)
             .expect("failed to create file");
 
         file.write_all(body.as_bytes()).await.expect("failed to write file");
+
+    println!("end for link: {:?}", Instant::now().duration_since(start));
 }
 
 #[derive(Parser)]
@@ -63,17 +68,23 @@ fn main() {
 
     std::fs::create_dir_all(output_dir).unwrap();
 
-    let start = Instant::now();
+
     let tasks = links
         .into_iter()
         .map(|link| async {
-            download_by_link(link, &output_dir).await;
-            println!("time: {:?}", start.elapsed());
+            download_by_link(link, output_dir.to_string()).await;
         })
         .collect::<Vec<_>>();
 
+    let handles = tasks
+        .into_iter()
+        .map(|task| runtime.spawn(task))
+        .collect::<Vec<_>>();
+
     runtime.block_on(async {
-        futures::future::join_all(tasks).await;
+        for handle in handles {
+            handle.await.unwrap();
+        }
     });
 
 }
