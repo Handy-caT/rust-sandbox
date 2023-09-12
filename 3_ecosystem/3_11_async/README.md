@@ -193,6 +193,15 @@ All of the input lifetimes to this function are captured in the future returned 
 - Why blocking an asynchronous runtime is bad? How to avoid it in practice?
 - What are the key points of actor model concurrency paradigm? How may it be useful in [Rust]?
 
+Some differences between the actor model and communicating sequential processes:
+
+Processes in CSP are anonymous, while actors have identities.
+CSP uses channels for message passing, whereas actors use mailboxes.
+Actor must only communicate through message delivery, hence making them stateless.
+CSP messages are delivered in the order they were sent.
+The actor model was designed for distributed programs, so it can scale across several machines.
+Actor model is more decoupled than CSP.
+Actor model can be used for long term processes like db connection or web socket connection.
 
 
 
