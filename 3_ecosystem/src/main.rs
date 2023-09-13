@@ -1,59 +1,63 @@
 mod rgba_wrapper;
 mod image_processor;
+mod file_parser;
 
 use std::fs::File;
-use std::io::Cursor;
-use image::{GenericImageView, ImageFormat};
-use imagequant::RGBA;
-use crate::image_processor::get_liq;
-use crate::rgba_wrapper::RGBAWrapper;
-use image::io::Reader as ImageReader;
-use rgb::ComponentBytes;
+use image::{ImageFormat};
+use crate::image_processor::{process_image};
+use std::time::Instant;
 
 
-async fn load_image_from_path<S: AsRef<str>>(path: S) -> RGBAWrapper {
+async fn load_image_from_path<S: AsRef<str>>(path: S, start: Instant) {
     let bytes = tokio::fs::read(path.as_ref()).await.unwrap();
-    RGBAWrapper::new(&bytes)
-}
+    let (res, width, height) = process_image(&bytes, start).await;
 
-#[tokio::main]
-async fn main() {
-    let start = std::time::Instant::now();
-    //let img = load_image_from_path("output.jpg").await;
-    //let img = load_image_from_path("beautiful-shot-grassy-hills-covered-trees-near-mountains-dolomites-italy.jpg").await;
-    let img = load_image_from_path("dental-implants-surgery-concept-pen-tool-created-clipping-path-included-jpeg-easy-composite.jpg").await;
-    // The dimensions method returns the images width and height.
+    let pixels = res.1;
+    let palette = res.0;
 
-    let liq = get_liq();
+    let mut img = image::ImageBuffer::new(width, height);
 
-    let width = img.width;
-    let height = img.height;
-
-    let bitmap: Vec<RGBA> = img.into();
-    let mut liq_image = liq.new_image_borrowed(bitmap.as_slice(), width as usize, height as usize, 0.0).unwrap();
-
-    println!("Finished loading image {:?}", start.elapsed());
-
-    let mut res = match liq.quantize(&mut liq_image) {
-        Ok(res) => res,
-        Err(err) => panic!("Quantization failed, because: {err:?}"),
-    };
-
-    res.set_dithering_level(1.0).unwrap();
-
-    println!("Finished quantization {:?}", start.elapsed());
-
-    let (palette, pixels) = res.remapped(&mut liq_image).unwrap();
-
-    let mut img = ImageReader::new(Cursor::new(palette.as_bytes()))
-        .set_format(ImageFormat::Jpeg);
-
-
-
-    //tokio::fs::write("output1.jpg", img.as_raw()).await.unwrap();
+    for (x, y, pixel) in img.enumerate_pixels_mut() {
+        let index = pixels[(y * width + x) as usize];
+        let color = palette[index as usize];
+        *pixel = image::Rgba([color.r, color.g, color.b, color.a]);
+    }
 
     let mut output = File::create("output1.jpg").unwrap();
     img.write_to(&mut output, ImageFormat::Jpeg).unwrap();
+}
+
+fn main() {
+    let start = Instant::now();
+    //let img = load_image_from_path("output.jpg").await;
+    //let img = load_image_from_path("beautiful-shot-grassy-hills-covered-trees-near-mountains-dolomites-italy.jpg").await;
+    //load_image_from_path("dental-implants-surgery-concept-pen-tool-created-clipping-path-included-jpeg-easy-composite.jpg", start).await;
+    //tokio::fs::write("output1.jpg", img.as_raw()).await.unwrap();
+
+    let default_parallelism_approx = 1;
+
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(default_parallelism_approx)
+        .enable_all()
+        .build()
+        .unwrap();
+
+    let tasks = vec![
+        load_image_from_path("dental-implants-surgery-concept-pen-tool-created-clipping-path-included-jpeg-easy-composite.jpg", start),
+        load_image_from_path("dental-implants-surgery-concept-pen-tool-created-clipping-path-included-jpeg-easy-composite.jpg", start)
+    ];
+
+    let handles = tasks
+        .into_iter()
+        .map(|task| runtime.spawn(task))
+        .collect::<Vec<_>>();
+
+
+    runtime.block_on(async {
+        for handle in handles {
+            handle.await.unwrap();
+        }
+    });
 
     println!("Time elapsed: {:?}", start.elapsed());
 }
