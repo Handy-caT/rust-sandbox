@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use bytemuck::{cast_vec};
 use image::{GenericImageView, Rgba};
 use imagequant::RGBA;
 
@@ -12,7 +12,7 @@ fn cast_to_liq_color(pixel: &Rgba<u8>) -> RGBA {
 }
 
 pub struct RGBAWrapper {
-    data: Box<[RGBA]>,
+    image: image::DynamicImage,
     pub width: u32,
     pub height: u32
 }
@@ -20,24 +20,21 @@ pub struct RGBAWrapper {
 impl RGBAWrapper {
     pub fn new(bytes: &[u8]) -> Self {
         let image = image::load_from_memory(bytes).unwrap();
+        let width = image.width();
+        let height = image.height();
+
         Self {
-            width: image.width(),
-            height: image.height(),
-            data: image.to_rgba8().pixels().map(cast_to_liq_color).collect::<Vec<_>>().into_boxed_slice()
+            width,
+            height,
+            image
         }
     }
 }
 
-impl Into<Box<[RGBA]>> for RGBAWrapper {
-    fn into(self) -> Box<[RGBA]> {
-        self.data
+impl Into<Vec<RGBA>> for RGBAWrapper {
+    fn into(self) -> Vec<RGBA> {
+       cast_vec(self.image.to_rgba8().to_vec())
     }
 }
 
-impl Deref for RGBAWrapper {
-    type Target = [RGBA];
 
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}

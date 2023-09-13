@@ -5,6 +5,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
+bytemuck = "1.14.0"
 image = "0.24.7"
 imagequant = "4.2.1"
+pariter = "0.5.1"
+rgb = "0.8.36"
 tokio = {version = "1.32.0", features = ["full"]}
