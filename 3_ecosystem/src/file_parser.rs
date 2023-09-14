@@ -8,13 +8,13 @@ pub struct FileParser {
 }
 
 impl FileParser {
-    pub(crate) fn new(file: PathBuf) -> Self {
+    pub fn new(file: PathBuf) -> Self {
         Self {
             file
         }
     }
 
-    pub(crate) async fn parse_file(&self) -> (HashSet<Url>, HashSet<PathBuf>) {
+    pub async fn parse_file(&self) -> (HashSet<Url>, HashSet<PathBuf>) {
         let mut urls = HashSet::new();
         let mut files = HashSet::new();
 

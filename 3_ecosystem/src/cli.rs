@@ -11,14 +11,6 @@ impl CLI {
         command!()
             .about("Prints its configuration to STDOUT.")
             .override_usage("step_3_9 [FLAGS] [OPTIONS]")
-            .arg(
-                arg!(
-                -c --config <FILE> "Path to configuration file [env: CONF_FILE=] [default: config.toml]"
-            )
-                    // We don't have syntax yet for optional options, so manually calling `required`
-                    .required(false)
-                    .value_parser(value_parser!(PathBuf)),
-            )
             .arg(arg!(
             -d --debug "Turn debugging information on"
             ))
@@ -63,6 +55,23 @@ impl CLI {
                 .conflicts_with_all(["urls", "files"])
                 .action(ArgAction::Set)
                 .num_args(1)
+            )
+            .arg(
+                Arg::new("interactive")
+                    .long("interactive")
+                    .short('i')
+                    .help("Run in interactive mode")
+                    .conflicts_with_all(["urls", "files", "file"])
+                    .action(ArgAction::SetTrue)
+            )
+            .arg(
+                Arg::new("config")
+                    .long("config")
+                    .short('c')
+                    .help("Path to configuration file")
+                    .value_parser(value_parser!(std::path::PathBuf))
+                    .action(ArgAction::Set)
+                    .num_args(1)
             )
             .get_matches()
     }

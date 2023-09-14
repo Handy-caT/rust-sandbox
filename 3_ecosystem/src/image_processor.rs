@@ -8,10 +8,10 @@ use tracing::Level;
 use url::Url;
 use crate::rgba_wrapper::RGBAWrapper;
 
-pub fn get_liq() -> Attributes {
+pub fn get_liq(min_quality: u8, target_quality: u8) -> Attributes {
     let mut liq = imagequant::new();
     liq.set_speed(3).unwrap();
-    liq.set_quality(70, 100).unwrap();
+    liq.set_quality(min_quality, target_quality).unwrap();
 
     liq
 }
@@ -41,18 +41,15 @@ async fn get_bytes_from_url(url: &Url) -> Vec<u8> {
 }
 
 
-pub async fn process_image(buffer: &[u8]) -> ((Vec<RGBA>, Vec<u8>), u32, u32) {
+pub async fn process_image(buffer: &[u8], liq: Attributes) -> ((Vec<RGBA>, Vec<u8>), u32, u32) {
     let span = span!(Level::TRACE, "process_image");
     let _enter = span.enter();
     let img = RGBAWrapper::new(buffer);
-
-    let liq = get_liq();
 
     let width = img.width;
     let height = img.height;
 
     let bitmap: Vec<RGBA> = img.into();
-    //let mut liq_image = liq.new_image_borrowed(bitmap.as_slice(), width as usize, height as usize, 0.0).unwrap();
 
     let res = thread::spawn(move || {
         let mut liq_image = liq.new_image_borrowed(bitmap.as_slice(), width as usize, height as usize, 0.0).unwrap();
@@ -94,19 +91,19 @@ pub struct ImageProcessor {}
 
 impl ImageProcessor {
 
-    pub async fn process_url_image(url: Url) {
+    pub async fn process_url_image(url: Url, liq: Attributes) {
         let bytes = get_bytes_from_url(&url).await;
         let start = std::time::Instant::now();
-        let (res, width, height) = process_image(&bytes).await;
+        let (res, width, height) = process_image(&bytes, liq).await;
         info!("Processing took {:?} for {}", start.elapsed(), get_filename_from_url(&url));
 
         save_image(res, width, height, get_filename_from_url(&url));
     }
 
-    pub async fn process_file_image( file: PathBuf) {
+    pub async fn process_file_image( file: PathBuf, liq: Attributes) {
         let bytes = tokio::fs::read(&file).await.unwrap();
         let start = std::time::Instant::now();
-        let (res, width, height) = process_image(&bytes).await;
+        let (res, width, height) = process_image(&bytes, liq).await;
         info!("Processing took {:?} for {}", start.elapsed(), get_filename_from_file(&file));
 
         save_image(res, width, height, get_filename_from_file(&file));
