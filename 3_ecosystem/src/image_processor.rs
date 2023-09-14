@@ -3,6 +3,8 @@ use std::thread;
 use imagequant::{Attributes, RGBA};
 use image::ImageFormat;
 use std::fs::File;
+use tracing::{info, span};
+use tracing::Level;
 use url::Url;
 use crate::rgba_wrapper::RGBAWrapper;
 
@@ -14,14 +16,22 @@ pub fn get_liq() -> Attributes {
     liq
 }
 
-async fn get_bytes_from_file(file: PathBuf) -> Vec<u8> {
+async fn get_bytes_from_file(file: &PathBuf) -> Vec<u8> {
     tokio::fs::read(file)
         .await
         .unwrap()
 }
 
-async fn get_bytes_from_url(url: Url) -> Vec<u8> {
-    reqwest::get(url)
+fn get_filename_from_file(file: &PathBuf) -> String {
+    file.file_name().unwrap().to_str().unwrap().to_string()
+}
+
+fn get_filename_from_url(url: &Url) -> String {
+    url.path_segments().unwrap().last().unwrap().to_string()
+}
+
+async fn get_bytes_from_url(url: &Url) -> Vec<u8> {
+    reqwest::get(url.clone())
         .await
         .unwrap()
         .bytes()
@@ -32,6 +42,8 @@ async fn get_bytes_from_url(url: Url) -> Vec<u8> {
 
 
 pub async fn process_image(buffer: &[u8]) -> ((Vec<RGBA>, Vec<u8>), u32, u32) {
+    let span = span!(Level::TRACE, "process_image");
+    let _enter = span.enter();
     let img = RGBAWrapper::new(buffer);
 
     let liq = get_liq();
@@ -57,7 +69,7 @@ pub async fn process_image(buffer: &[u8]) -> ((Vec<RGBA>, Vec<u8>), u32, u32) {
     (res, width, height)
 }
 
-pub fn save_image(res: (Vec<RGBA>, Vec<u8>), width: u32, height: u32) {
+pub fn save_image(res: (Vec<RGBA>, Vec<u8>), width: u32, height: u32, filename: String) {
     let pixels = res.1;
     let palette = res.0;
 
@@ -71,7 +83,7 @@ pub fn save_image(res: (Vec<RGBA>, Vec<u8>), width: u32, height: u32) {
 
     thread::spawn(move ||
         {
-            let mut output = File::create("output/output.jpg").unwrap();
+            let mut output = File::create(format!("output/{}", filename)).unwrap();
             img.write_to(&mut output, ImageFormat::Jpeg).unwrap();
         }
     ).join().unwrap();
@@ -83,16 +95,20 @@ pub struct ImageProcessor {}
 impl ImageProcessor {
 
     pub async fn process_url_image(url: Url) {
-        let bytes = get_bytes_from_url(url).await;
+        let bytes = get_bytes_from_url(&url).await;
+        let start = std::time::Instant::now();
         let (res, width, height) = process_image(&bytes).await;
+        info!("Processing took {:?} for {}", start.elapsed(), get_filename_from_url(&url));
 
-        save_image(res, width, height);
+        save_image(res, width, height, get_filename_from_url(&url));
     }
 
     pub async fn process_file_image( file: PathBuf) {
-        let bytes = tokio::fs::read(file).await.unwrap();
+        let bytes = tokio::fs::read(&file).await.unwrap();
+        let start = std::time::Instant::now();
         let (res, width, height) = process_image(&bytes).await;
+        info!("Processing took {:?} for {}", start.elapsed(), get_filename_from_file(&file));
 
-        save_image(res, width, height);
+        save_image(res, width, height, get_filename_from_file(&file));
     }
 }

@@ -1,30 +1,41 @@
 mod rgba_wrapper;
 mod image_processor;
 mod file_parser;
+mod logger;
+mod cli;
+mod settings;
 
+use std::collections::HashSet;
 use std::path::PathBuf;
-use crate::image_processor::{ImageProcessor, process_image, save_image};
-use std::time::Instant;
+use std::thread::available_parallelism;
+use crate::image_processor::{ImageProcessor};
+use tracing::info;
+use url::Url;
+use crate::cli::CLI;
 use crate::file_parser::FileParser;
+use crate::logger::Logger;
+use crate::settings::Settings;
 
-
-async fn load_image_from_path<S: AsRef<str>>(path: S) {
-    let bytes = tokio::fs::read(path.as_ref()).await.unwrap();
-    let (res, width, height) = process_image(&bytes).await;
-
-    save_image(res, width, height);
+async fn get_urls_and_files(settings: Settings) -> (HashSet<Url>, HashSet<PathBuf>) {
+    if settings.file.is_some() {
+        let fileparser = FileParser::new(settings.file.unwrap());
+        fileparser.parse_file().await
+    } else {
+        (settings.urls, settings.files)
+    }
 }
 
 fn main() {
-    let start = Instant::now();
-    //let img = load_image_from_path("output.jpg").await;
-    //let img = load_image_from_path("beautiful-shot-grassy-hills-covered-trees-near-mountains-dolomites-italy.jpg").await;
-    //load_image_from_path("dental-implants-surgery-concept-pen-tool-created-clipping-path-included-jpeg-easy-composite.jpg", start).await;
-    //tokio::fs::write("output1.jpg", img.as_raw()).await.unwrap();
 
-    let fileparser = FileParser::new(PathBuf::from("urls.txt"));
+    let matches = CLI::parse_args();
+    let settings = Settings::parse_args(&matches);
 
-    let default_parallelism_approx = 2;
+    Logger::init();
+    info!("Starting the program");
+    let start = std::time::Instant::now();
+    info!("Start time: {:?}", start);
+
+    let default_parallelism_approx = available_parallelism().unwrap().get();
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(default_parallelism_approx)
@@ -32,27 +43,20 @@ fn main() {
         .build()
         .unwrap();
 
-    let fileparser = FileParser::new(PathBuf::from("urls.txt"));
-    let (urls, files) = runtime.block_on(fileparser.parse_file());
+    let (urls, files) = runtime.block_on(get_urls_and_files(settings));
+
+    info!("Urls: {:?}", urls);
+    info!("Files: {:?}", files);
 
     let tasks_url = urls
         .into_iter()
-        .map(|url| ImageProcessor::process_url_image(url))
+        .map(ImageProcessor::process_url_image)
         .collect::<Vec<_>>();
 
     let tasks_file = files
         .into_iter()
-        .map(|file| ImageProcessor::process_file_image(file))
+        .map(ImageProcessor::process_file_image)
         .collect::<Vec<_>>();
-
-    // let tasks = vec![
-    //     ImageProcessor::process_file_image(PathBuf::from("dental-implants-surgery-concept-pen-tool-created-clipping-path-included-jpeg-easy-composite.jpg")),
-    //     ImageProcessor::process_file_image(PathBuf::from("dental-implants-surgery-concept-pen-tool-created-clipping-path-included-jpeg-easy-composite.jpg"))
-    // ];
-    // let handles = tasks
-    //     .into_iter()
-    //     .map(|task| runtime.spawn(task))
-    //     .collect::<Vec<_>>();
 
     let mut handles = tasks_url
         .into_iter()
@@ -72,5 +76,5 @@ fn main() {
         }
     });
 
-    println!("Time elapsed: {:?}", start.elapsed());
+    info!("Total time: {:?}", start.elapsed());
 }
