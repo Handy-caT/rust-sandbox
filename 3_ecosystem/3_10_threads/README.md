@@ -94,12 +94,6 @@ Write a program with the following workflow:
 After completing everything above, you should be able to answer (and understand why) the following questions:
 - What is concurrency? What is parallelism? How do they relate to each other and how do they differ?
 
-Concurrent programming and parallel programming are not the same thing! Only one always means “at the same time”.
-Concurrent: working on different parts of code that are independent from each other.
-Parallel: working on different parts of code at the same time.
-Concurrency: more than one task was active over a given timeframe.
-Parallelism: more than one task was active at the same instant
-
 - How parallelism is represented in [Rust]? Which are common crates for using it?
 
 [Rust] ecosystem has support for parallelism in form of [`rayon`] and [`dpc-pariter`] crates, which make it easy to convert a sequential iterator to _execute in parallel threads_.
