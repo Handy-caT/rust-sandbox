@@ -3,18 +3,18 @@ use std::hash::Hash;
 use std::path::PathBuf;
 use url::Url;
 
-struct FileParser {
+pub struct FileParser {
     file: PathBuf
 }
 
 impl FileParser {
-    fn new(file: PathBuf) -> Self {
+    pub(crate) fn new(file: PathBuf) -> Self {
         Self {
             file
         }
     }
 
-    async fn parse_file(&self) -> (HashSet<Url>, HashSet<PathBuf>) {
+    pub(crate) async fn parse_file(&self) -> (HashSet<Url>, HashSet<PathBuf>) {
         let mut urls = HashSet::new();
         let mut files = HashSet::new();
 
