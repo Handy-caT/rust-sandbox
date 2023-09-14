@@ -94,16 +94,17 @@ Write a program with the following workflow:
 After completing everything above, you should be able to answer (and understand why) the following questions:
 - What is concurrency? What is parallelism? How do they relate to each other and how do they differ?
 
-Concurrent execution of a large piece of work means that piece was broken into smaller pieces that were distributed over multiple threads.
-The computer works on completing those individual threads by executing code on each thread little by little, often switching between threads before that thread’s work is finished.
-
-Parallel execution of a large piece of code means multiple threads are being executed at the same time.
-Since a core can only do one thing at a time, this means multiple cores are needed for parallelism.
-
 - How parallelism is represented in [Rust]? Which are common crates for using it?
+
+[Rust] ecosystem has support for parallelism in form of [`rayon`] and [`dpc-pariter`] crates, which make it easy to convert a sequential iterator to _execute in parallel threads_.
+Rayon provides parallel iterators.
+dpc-pariter provides parallel maps and filters.
+
 - What are the main ways of threads synchronization in [Rust]? Which advantages and disadvantages does each one have? What are the use-cases for each one?
 
-
+Channels, mutexes, atomics
+Atomics not generic like in c++
+Rust does not have a general semaphore type
 
 
 [`atomic`]: https://docs.rs/atomic
