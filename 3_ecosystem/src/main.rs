@@ -79,7 +79,8 @@ fn main() {
     let mut settings = Settings::new(get_filename_from_cli(&matches));
     settings.parse_args(&matches);
 
-    Logger::init();
+    Logger::init(&settings);
+
     info!("Starting the program");
     info!("Settings: {:?}", settings);
     let start = std::time::Instant::now();

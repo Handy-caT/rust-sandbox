@@ -7,6 +7,31 @@ use config::{Config, ConfigError, File, Map, Source, Value};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+#[derive(SmartDefault, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum LevelFilter {
+    Off,
+    Trace,
+    Debug,
+    #[default]
+    Info,
+    Warn,
+    Error,
+}
+
+impl Into<tracing_subscriber::filter::LevelFilter> for LevelFilter {
+    fn into(self) -> tracing::level_filters::LevelFilter {
+        match self {
+            LevelFilter::Off => tracing::level_filters::LevelFilter::OFF,
+            LevelFilter::Trace => tracing::level_filters::LevelFilter::TRACE,
+            LevelFilter::Debug => tracing::level_filters::LevelFilter::DEBUG,
+            LevelFilter::Info => tracing::level_filters::LevelFilter::INFO,
+            LevelFilter::Warn => tracing::level_filters::LevelFilter::WARN,
+            LevelFilter::Error => tracing::level_filters::LevelFilter::ERROR,
+        }
+    }
+}
+
+
 #[derive(SmartDefault, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     #[default(Some(PathBuf::from("urls.txt")))]
@@ -25,6 +50,16 @@ pub struct Settings {
     pub target_quality: u8,
     #[default(PathBuf::from("config.toml"))]
     pub config: PathBuf,
+    #[default(LoggingSettings::default())]
+    pub log_config: LoggingSettings,
+}
+
+#[derive(SmartDefault, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LoggingSettings {
+    #[default(LevelFilter::Info)]
+    pub level: LevelFilter,
+    #[default(LevelFilter::Info)]
+    pub level_process: LevelFilter,
 }
 
 impl Source for Settings {

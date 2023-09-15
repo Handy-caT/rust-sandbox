@@ -42,7 +42,7 @@ async fn get_bytes_from_url(url: &Url) -> Vec<u8> {
 
 
 pub async fn process_image(buffer: &[u8], liq: Attributes) -> ((Vec<RGBA>, Vec<u8>), u32, u32) {
-    let span = span!(Level::TRACE, "process_image");
+    let span = span!(target: "process", Level::TRACE, "process_image");
     let _enter = span.enter();
     let img = RGBAWrapper::new(buffer);
 
