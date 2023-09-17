@@ -3,3 +3,14 @@ name = "step_4_1"
 version = "0.1.0"
 edition = "2021"
 publish = false
+
+[dependencies]
+sea-orm = { version = "0.12", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros",  ] }
+entities = { path = "entities" }
+migration = { path = "migration" }
+tokio = { version = "1.32.0", features = ["full"] }
+tracing = "0.1.37"
+clap = {version = "4.4.3", features = ["derive"]}
+
+
+
