@@ -21,6 +21,7 @@ pub enum CliCommand {
     UpdateUser(UserId, UserName),
     UpdateRole(RoleSlug, Option<RoleName>, Option<RolePermissions>),
     AssignRole(UserId, RoleSlug),
+    UnassignRole(UserId, RoleSlug),
     ShowUsers,
     ShowRoles,
     ShowUser(UserId),
@@ -114,6 +115,13 @@ impl CliProcessor {
         CliCommand::AssignRole(UserId(id.unwrap().to_owned()), RoleSlug(slug.unwrap().to_owned()))
     }
 
+    fn process_unassign(matches: &ArgMatches) -> CliCommand {
+        let id = matches.get_one::<i32>("user_id");
+        let slug = matches.get_one::<String>("role_slug");
+
+        CliCommand::UnassignRole(UserId(id.unwrap().to_owned()), RoleSlug(slug.unwrap().to_owned()))
+    }
+
     fn process_show(matches: &ArgMatches) -> CliCommand {
         match matches.subcommand() {
             Some(("user", sub_matches)) => {
@@ -149,6 +157,9 @@ impl CliProcessor {
             }
             Some(("assign", sub_matches)) => {
                 CliProcessor::process_assign(sub_matches)
+            }
+            Some(("unassign", sub_matches)) => {
+                CliProcessor::process_unassign(sub_matches)
             }
             Some(("show", sub_matches)) => {
                 CliProcessor::process_show(sub_matches)

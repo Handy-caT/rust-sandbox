@@ -98,6 +98,18 @@ impl DBProcessor {
                     user_role.insert(&self.db).await.unwrap();
                 }
             }
+            CliCommand::UnassignRole(user_id, role_slug) => {
+                let user_role = users_roles::Entity::find()
+                    .filter(users_roles::Column::UserId.eq(user_id.0))
+                    .filter(users_roles::Column::RoleSlug.eq(&role_slug.0))
+                    .one(&self.db)
+                    .await
+                    .unwrap();
+
+                if let Some(user_role) = user_role {
+                    user_role.delete(&self.db).await.unwrap();
+                }
+            }
             CliCommand::ShowRoles => {
                 let roles = entities::role::Entity::find()
                     .all(&self.db)
