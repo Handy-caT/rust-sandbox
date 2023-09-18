@@ -11,6 +11,7 @@ migration = { path = "migration" }
 tokio = { version = "1.32.0", features = ["full"] }
 tracing = "0.1.37"
 clap = {version = "4.4.3", features = ["derive"]}
+sea-query = "0.30.1"
 
 
 
