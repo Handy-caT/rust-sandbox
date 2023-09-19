@@ -1,0 +1,17 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = {version = "4.4.3", features = ["derive"]}
+serde = {version = "1.0.188", features = ["derive"]}
+serde_json = "1.0.80"
+sea-orm = { version = "0.12", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros",  ] }
+entities = { path = "../entities" }
+migration = { path = "../migration" }
+reqwest = "0.11.20"
+url = { version = "2.4.1", features = [] }
+tokio = "1.32.0"
