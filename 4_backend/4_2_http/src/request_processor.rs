@@ -61,6 +61,21 @@ impl RequestProcessor {
         }
     }
 
+    fn check_null_string<S: AsRef<str>>(json: &Value, key: S) -> Result<Option<String>, Error> {
+        let value = json.get(key.as_ref());
+        if value.is_none() {
+            return Err(error::ErrorBadRequest(format!("{} is missing", key.as_ref())));
+        }
+        if !value.unwrap().is_string() {
+            return Ok(None);
+        }
+        let value = value.unwrap().as_str();
+        if value.is_none() {
+            return Err(error::ErrorBadRequest(format!("{} is not a string", key.as_ref())));
+        }
+        Ok(Some(value.unwrap().to_owned()))
+    }
+
     fn unwrap_json_string<S: AsRef<str>>(json: &Value, key: S) -> Result<String, Error> {
         let value = json.get(key.as_ref());
         if value.is_none() {
@@ -137,8 +152,8 @@ impl RequestProcessor {
 
     async fn process_role_add(&self, json: &Value) -> Result<String, Error> {
         let slug = Self::unwrap_json_string(json, "slug")?;
-        let name = json.get("name");
-        let permissions = json.get("permissions");
+        let name = Self::check_null_string(json, "name")?;
+        let permissions = Self::check_null_string(json, "permissions")?;
 
         let mut role = role::ActiveModel {
             slug: Set(slug),
@@ -147,24 +162,17 @@ impl RequestProcessor {
 
         if name.is_some() {
             let name = name.unwrap();
-            if !name.is_string() {
-                return Err(error::ErrorBadRequest("name is not a string"));
-            }
-            let name = name.as_str().unwrap();
             role.name = Set(name.to_owned());
         }
 
         if permissions.is_some() {
             let permissions = permissions.unwrap();
-            if !permissions.is_string() {
-                return Err(error::ErrorBadRequest("permissions is not a string"));
-            }
-            let permissions = permissions.as_str().unwrap();
             role.permissions = Set(permissions.to_owned());
         }
 
         let role = role.insert(&self.db).await;
         if role.is_err() {
+            println!("{:?}", role);
             return Err(error::ErrorBadRequest("role already exists"));
         }
         let role = role.unwrap();
@@ -172,6 +180,7 @@ impl RequestProcessor {
 
         let role = serde_json::to_string(&role);
         if role.is_err() {
+            println!("{:?}", role);
             return Err(error::ErrorInternalServerError("cannot serialize role"));
         }
         let role = role.unwrap();
@@ -269,8 +278,8 @@ impl RequestProcessor {
 
     async fn process_role_update(&self, json: &Value) -> Result<String, Error> {
         let slug = Self::unwrap_json_string(json, "slug")?;
-        let name = json.get("name");
-        let permissions = json.get("permissions");
+        let name = Self::check_null_string(json, "name")?;
+        let permissions = Self::check_null_string(json, "permissions")?;
 
         let role = role::Entity::find()
             .filter(role::Column::Slug.eq(&slug))
@@ -284,25 +293,17 @@ impl RequestProcessor {
         if role.is_none() {
             Err(error::ErrorBadRequest("role does not exist"))?;
         }
-        let mut role = role.unwrap();
+        let role = role.unwrap();
 
         let mut role: role::ActiveModel = role.into();
 
         if name.is_some() {
             let name = name.unwrap();
-            if !name.is_string() {
-                return Err(error::ErrorBadRequest("name is not a string"));
-            }
-            let name = name.as_str().unwrap();
             role.name = Set(name.to_owned());
         }
 
         if permissions.is_some() {
             let permissions = permissions.unwrap();
-            if !permissions.is_string() {
-                return Err(error::ErrorBadRequest("permissions is not a string"));
-            }
-            let permissions = permissions.as_str().unwrap();
             role.permissions = Set(permissions.to_owned());
         }
 

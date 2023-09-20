@@ -40,11 +40,9 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Role::Name)
                         .string()
-                        .not_null()
                     )
                     .col(ColumnDef::new(Role::Permissions)
                         .string()
-                        .not_null()
                     )
                     .to_owned(),
             )
