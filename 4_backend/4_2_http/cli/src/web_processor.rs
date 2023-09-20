@@ -54,12 +54,17 @@ impl WebProcessor {
             CliCommand::UnassignRole(request) => {
                 self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
             }
-            // CliCommand::ShowUsers => {}
-            // CliCommand::ShowRoles => {}
-            // CliCommand::ShowUser(_) => {}
-            // CliCommand::ShowRole(_) => {}
-            _ => {
-                "Not implemented".to_owned()
+            CliCommand::ShowUsers(request) => {
+                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+            }
+            CliCommand::ShowRoles(request) => {
+                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+            }
+            CliCommand::ShowUser(request) => {
+                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+            }
+            CliCommand::ShowRole(request) => {
+                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
             }
         }
     }

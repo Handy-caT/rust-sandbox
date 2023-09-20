@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::cli_processor::{RoleName, RolePermissions, RoleSlug, UserName};
+use crate::cli_processor::{RoleName, RolePermissions, RoleSlug, UserId, UserName};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -72,4 +72,26 @@ pub struct UnassignRoleRequest {
     pub command_type: RequestType,
     pub id: i32,
     pub slug: RoleSlug,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ShowUserRequest {
+    pub command_type: RequestType,
+    pub id: UserId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ShowRoleRequest {
+    pub command_type: RequestType,
+    pub slug: RoleSlug,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ShowUsersRequest {
+    pub command_type: RequestType,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ShowRolesRequest {
+    pub command_type: RequestType,
 }

@@ -2,7 +2,7 @@ use clap::ArgMatches;
 use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 use entities::{role, user, users_roles};
-use crate::requests::{AddRoleRequest, AddUserRequest, AssignRoleRequest, DeleteRoleRequest, DeleteUserRequest, RequestType, UnassignRoleRequest, UpdateRoleRequest, UpdateUserRequest};
+use crate::requests::{AddRoleRequest, AddUserRequest, AssignRoleRequest, DeleteRoleRequest, DeleteUserRequest, RequestType, ShowRoleRequest, ShowRolesRequest, ShowUserRequest, ShowUsersRequest, UnassignRoleRequest, UpdateRoleRequest, UpdateUserRequest};
 
 pub struct CliProcessor {
     matches: ArgMatches
@@ -30,10 +30,10 @@ pub enum CliCommand {
     UpdateRole(UpdateRoleRequest),
     AssignRole(AssignRoleRequest),
     UnassignRole(UnassignRoleRequest),
-    ShowUsers,
-    ShowRoles,
-    ShowUser(UserId),
-    ShowRole(RoleSlug),
+    ShowUsers(ShowUsersRequest),
+    ShowRoles(ShowRolesRequest),
+    ShowUser(ShowUserRequest),
+    ShowRole(ShowRoleRequest),
 }
 
 impl CliProcessor {
@@ -164,18 +164,34 @@ impl CliProcessor {
             Some(("user", sub_matches)) => {
                 let id = sub_matches.get_one::<i32>("id");
                 if id.is_none() {
-                    return CliCommand::ShowUsers;
+                    let request = ShowUsersRequest {
+                        command_type: RequestType::ShowUsers,
+                    };
+                    return CliCommand::ShowUsers(request);
                 }
 
-                CliCommand::ShowUser(UserId(id.unwrap().to_owned()))
+                let request = ShowUserRequest {
+                    command_type: RequestType::ShowUser,
+                    id: UserId(id.unwrap().to_owned())
+                };
+
+                CliCommand::ShowUser(request)
             }
             Some(("role", sub_matches)) => {
                 let slug = sub_matches.get_one::<String>("slug");
                 if slug.is_none() {
-                    return CliCommand::ShowRoles;
+                    let request = ShowRolesRequest {
+                        command_type: RequestType::ShowRoles,
+                    };
+                    return CliCommand::ShowRoles(request);
                 }
 
-                CliCommand::ShowRole(RoleSlug(slug.unwrap().to_owned()))
+                let request = ShowRoleRequest {
+                    command_type: RequestType::ShowRole,
+                    slug: RoleSlug(slug.unwrap().to_owned())
+                };
+
+                CliCommand::ShowRole(request)
             }
             _ => unreachable!()
         }

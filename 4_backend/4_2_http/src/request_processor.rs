@@ -1,12 +1,12 @@
 use actix_web::{Error, error};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, ModelTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, JoinType, ModelTrait, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
 use entities::{role, user, users_roles};
 
-#[derive(FromQueryResult, Debug)]
+#[derive(FromQueryResult, Debug, Serialize, Deserialize)]
 struct UserAndRole {
     id: i32,
     name: String,
@@ -345,64 +345,202 @@ impl RequestProcessor {
         if user_role.is_ok() {
             let user_role = user_role.unwrap();
             if user_role.is_some() {
-                return Err(error::ErrorBadRequest("Role is already assigned"));
+                Err(error::ErrorBadRequest("Role is already assigned"))
             } else {
                 let user_role = users_roles::ActiveModel {
                     user_id: Set(id),
-                    role_slug: Set(slug),
+                    role_slug: Set(slug.clone()),
                     ..Default::default()
                 };
 
-                let mut res = user_role.insert(&self.db).await;
+                let res = user_role.insert(&self.db).await;
                 if res.is_err() {
                     return Err(error::ErrorInternalServerError("Database internal error"));
                 };
-                let res = res.unwrap();
 
-                let serialized = serde_json::to_string(&res);
+                let serialized = serde_json::to_string(&slug);
+                if serialized.is_err() {
+                    Err(error::ErrorInternalServerError("cannot serialize role"))?;
+                }
 
-
-                return Ok("".to_string())
+                Ok(serialized.unwrap())
             }
         } else {
-            return Err(error::ErrorInternalServerError("Database internal error"));
+            Err(error::ErrorInternalServerError("Database internal error"))
         }
+    }
+
+    async fn process_unassing_role(&self, json: &Value) -> Result<String, Error> {
+        let slug = Self::unwrap_json_string(json, "slug")?;
+        let id = Self::unwrap_json_i32(json, "id")?;
+
+        let user_role = users_roles::Entity::find()
+            .filter(users_roles::Column::UserId.eq(id))
+            .filter(users_roles::Column::RoleSlug.eq(&slug))
+            .one(&self.db)
+            .await;
+
+        if user_role.is_err() {
+            Err(error::ErrorBadRequest("Role is not assigned"))
+        } else {
+            let user_role = user_role.unwrap();
+            if user_role.is_none() {
+                Err(error::ErrorBadRequest("Role is not assigned"))
+            } else {
+                let user_role = user_role.unwrap();
+                let user_role = user_role.delete(&self.db).await;
+                if user_role.is_err() {
+                    Err(error::ErrorInternalServerError("Database internal error"))
+                } else {
+                    let serialized = serde_json::to_string(&slug);
+                    if serialized.is_err() {
+                        Err(error::ErrorInternalServerError("cannot serialize role"))?;
+                    }
+                    Ok(serialized.unwrap())
+                }
+            }
+        }
+    }
+
+    async fn process_show_users(&self) -> Result<String, Error> {
+        let user_select = user::Entity::find()
+            .column(users_roles::Column::RoleSlug)
+            .join_rev(
+                JoinType::LeftJoin,
+                users_roles::Entity::belongs_to(user::Entity)
+                    .from(users_roles::Column::UserId)
+                    .to(user::Column::Id)
+                    .into()
+            )
+            .into_model::<UserAndRole>()
+            .all(&self.db)
+            .await;
+
+        if user_select.is_err() {
+            return Err(error::ErrorInternalServerError("cannot select users"));
+        };
+        let user_select = user_select.unwrap();
+
+        let serialized = serde_json::to_string(&user_select);
+        if serialized.is_err() {
+            return Err(error::ErrorInternalServerError("cannot serialize users"));
+        }
+        Ok(serialized.unwrap())
+    }
+
+    async fn process_show_roles(&self) -> Result<String, Error> {
+        let roles = entities::role::Entity::find()
+            .all(&self.db)
+            .await;
+
+        if roles.is_err() {
+            return Err(error::ErrorInternalServerError("cannot select roles"));
+        }
+        let roles = roles.unwrap();
+
+        let serialized = serde_json::to_string(&roles);
+        if serialized.is_err() {
+            return Err(error::ErrorInternalServerError("cannot serialize roles"));
+        }
+        Ok(serialized.unwrap())
+    }
+
+    async fn process_show_user(&self, json: &Value) -> Result<String, Error> {
+        let id = Self::unwrap_json_i32(json, "id")?;
+
+        let user_select = user::Entity::find_by_id(id)
+            .column(users_roles::Column::RoleSlug)
+            .join_rev(
+                JoinType::LeftJoin,
+                users_roles::Entity::belongs_to(user::Entity)
+                    .from(users_roles::Column::UserId)
+                    .to(user::Column::Id)
+                    .into()
+            )
+            .into_model::<UserAndRole>()
+            .all(&self.db)
+            .await;
+
+        if user_select.is_err() {
+            return Err(error::ErrorInternalServerError("cannot select users"));
+        };
+        let user_select = user_select.unwrap();
+
+        let serialized = serde_json::to_string(&user_select);
+        if serialized.is_err() {
+            return Err(error::ErrorInternalServerError("cannot serialize users"));
+        }
+        Ok(serialized.unwrap())
+    }
+
+    async fn process_show_role(&self, json: &Value) -> Result<String, Error> {
+        let slug = Self::unwrap_json_string(json, "slug")?;
+
+        let role = entities::role::Entity::find()
+            .filter(role::Column::Slug.eq(slug))
+            .one(&self.db)
+            .await;
+
+        if role.is_err() {
+            return Err(error::ErrorInternalServerError("cannot select role"));
+        }
+        let role = role.unwrap();
+        if role.is_none() {
+            return Err(error::ErrorBadRequest("role does not exist"));
+        }
+        let role = role.unwrap();
+
+        let serialized = serde_json::to_string(&role);
+        if serialized.is_err() {
+            return Err(error::ErrorInternalServerError("cannot serialize role"));
+        }
+        Ok(serialized.unwrap())
     }
 
     async fn process_command(&self, json: &Value, rtype: RequestType) -> Result<String, Error> {
         match rtype {
             RequestType::AddUser => {
-                return self.process_user_add(json).await
+                self.process_user_add(json).await
             }
             RequestType::AddRole => {
-                return self.process_role_add(json).await
+                self.process_role_add(json).await
             }
             RequestType::DeleteUser => {
-                return self.process_delete_user(json).await
+                self.process_delete_user(json).await
             }
             RequestType::DeleteRole => {
-                return self.process_role_delete(json).await
+                self.process_role_delete(json).await
             }
             RequestType::UpdateUser => {
-                return self.process_user_update(json).await
+                self.process_user_update(json).await
             }
             RequestType::UpdateRole => {
-                return self.process_role_update(json).await
+                self.process_role_update(json).await
             }
-            RequestType::AssignRole => {}
-            RequestType::UnassignRole => {}
-            RequestType::ShowUsers => {}
-            RequestType::ShowRoles => {}
-            RequestType::ShowUser => {}
-            RequestType::ShowRole => {}
+            RequestType::AssignRole => {
+                self.process_assign_role(json).await
+            }
+            RequestType::UnassignRole => {
+                self.process_unassing_role(json).await
+            }
+            RequestType::ShowUsers => {
+                self.process_show_users().await
+            }
+            RequestType::ShowRoles => {
+                self.process_show_roles().await
+            }
+            RequestType::ShowUser => {
+                self.process_show_user(json).await
+            }
+            RequestType::ShowRole => {
+                self.process_show_role(json).await
+            }
         }
-        Ok("".to_owned())
     }
 
     pub async fn process_request(&self, json: Value) -> Result<String, Error> {
         let request_type = Self::get_command_type(&json)?;
         let res = self.process_command(&json, request_type).await?;
-
 
         Ok(res)
     }
