@@ -1,6 +1,6 @@
 use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, FromQueryResult, JoinType, ModelTrait, QueryFilter, QuerySelect, QueryTrait, RelationDef, Statement};
 use sea_orm::ActiveValue::Set;
-use entities::{user, users_roles};
+use entities::{role, user, users_roles};
 use entities::user::Model;
 use crate::cli_processor::CliCommand;
 
@@ -81,21 +81,32 @@ impl DBProcessor {
                 role.update(&self.db).await.unwrap();
             }
             CliCommand::AssignRole(user_id, role_slug) => {
-                let user_role = users_roles::Entity::find()
-                    .filter(users_roles::Column::UserId.eq(user_id.0))
-                    .filter(users_roles::Column::RoleSlug.eq(&role_slug.0))
+                let role = role::Entity::find()
+                    .filter(role::Column::Slug.eq(&role_slug.0))
                     .one(&self.db)
                     .await
                     .unwrap();
 
-                if user_role.is_none() {
-                    let user_role = users_roles::ActiveModel {
-                        user_id: Set(user_id.0),
-                        role_slug: Set(role_slug.0),
-                        ..Default::default()
-                    };
+                if role.is_some() {
+                    let user_role = users_roles::Entity::find()
+                        .filter(users_roles::Column::UserId.eq(user_id.0))
+                        .filter(users_roles::Column::RoleSlug.eq(&role_slug.0))
+                        .one(&self.db)
+                        .await
+                        .unwrap();
 
-                    user_role.insert(&self.db).await.unwrap();
+                    if user_role.is_none() {
+                        let user_role = users_roles::ActiveModel {
+                            user_id: Set(user_id.0),
+                            role_slug: Set(role_slug.0),
+                            ..Default::default()
+                        };
+
+                        user_role.insert(&self.db).await.unwrap();
+                    }
+                }
+                else {
+                    println!("Role with slug {} does not exist", role_slug.0 )
                 }
             }
             CliCommand::UnassignRole(user_id, role_slug) => {
