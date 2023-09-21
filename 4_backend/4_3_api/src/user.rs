@@ -265,7 +265,7 @@ async fn unassign_role(data: web::Data<SharedDb>, params: web::Path<(i32, String
 
 #[utoipa::path(
     context_path = "/users",
-    request_body = user::Model,
+    request_body = Model,
     responses(
     (status = OK, body = UserAndRole, description = "User and his role"),
     (status = INTERNAL_SERVER_ERROR, description = "Internal server error"),
@@ -273,7 +273,7 @@ async fn unassign_role(data: web::Data<SharedDb>, params: web::Path<(i32, String
     )
 )]
 #[put("/{id}")]
-async fn update_user(data: web::Data<SharedDb>, id: web::Path<i32>, user: web::Json<user::Model>) -> Result<HttpResponse, Error> {
+async fn update_user(data: web::Data<SharedDb>, id: web::Path<i32>, user: Json<user::Model>) -> Result<HttpResponse, Error> {
     let id = id.into_inner();
     let name = user.name.clone();
     if id != user.id {

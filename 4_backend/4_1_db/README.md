@@ -138,11 +138,25 @@ Consider to ensure [data consistency][202] in your database as much as possible.
 
 After completing everything above, you should be able to answer (and understand why) the following questions:
 - What is connection pool pattern? How does it work? Which problems does it solve?
+
+Connection pool patten is a pattern that allows to reuse already created connections to database instead of creating new ones every time. It solves the problem of expensive connection creation.
+
 - What is ORM pattern? How does it differ from query building? What benefits do they give?
+
+ORM pattern helps to map objects to database tables and vice versa. It differs from query building in that it allows to work with objects instead of writing SQL queries.
+
 - Why writing raw SQL queries could be meaningful? Which are use-cases for it and when is it preferred over ORMs?
+
+It's harder to write raw SQL queries, but it's more flexible and allows to write more complex queries. It's preferred over ORMs when you need to write complex queries.
+
 - What are migrations? Why should we use them? How do they work? 
+
+Migration is a way to change database schema. We should use them to keep database schema up-to-date. They work by applying a set of changes to database schema.
+It's useful gor temas when changes to database schema can be done in one time. It helps to keep history of migrations
+
 - Which kinds of migrations do exist? What are their advantages and disadvantages? When and which kind is preferred?  
 
+Application-code migrations and manual migrations. Sql raw migrations and code migrations
 
 
 

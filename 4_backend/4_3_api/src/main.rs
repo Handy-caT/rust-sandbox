@@ -7,6 +7,7 @@ use futures::StreamExt;
 use sea_orm::{DatabaseConnection};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use crate::role::RoleDocs;
 use crate::user::UserDocs;
 
 
@@ -24,7 +25,8 @@ async fn main() -> std::io::Result<()> {
         db
     };
 
-    let openapi = UserDocs::openapi();
+    let users = UserDocs::openapi();
+    let roles = RoleDocs::openapi();
 
     HttpServer::new(move || {
         App::new()
@@ -34,7 +36,10 @@ async fn main() -> std::io::Result<()> {
             .service(web::scope("/roles")
                 .configure(role::roles_config))
             .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/user.json", users.clone()),
+            )
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/role.json", roles.clone()),
             )
     })
         .bind(("127.0.0.1", 8080))?

@@ -1,4 +1,5 @@
 use url::Url;
+use entities::user;
 use crate::cli_processor::CliCommand;
 
 
@@ -31,40 +32,171 @@ impl WebProcessor {
     pub async fn process_command(&self, command: CliCommand) -> String {
         match command {
             CliCommand::AddUser(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let user = user::Model {
+                    id: 0,
+                    name: request.name.0
+                };
+                let json = serde_json::to_string(&user).unwrap();
+                let url = format!("{}users/", self.backend);
+                reqwest::Client::new()
+                    .post(url)
+                    .body(json)
+                    .header("Content-Type", "application/json")
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::AddRole(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let role = entities::role::Model {
+                    slug: request.slug.0,
+                    name: request.name.map(|name| name.0),
+                    permissions: request.permissions.map(|permissions| permissions.0)
+                };
+                let url = format!("{}roles/", self.backend);
+                reqwest::Client::new()
+                    .post(url)
+                    .body(serde_json::to_string(&role).unwrap())
+                    .header("Content-Type", "application/json")
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::DeleteUserId(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let id = request.id;
+                let url = format!("{}users/{}", self.backend, id);
+                reqwest::Client::new()
+                    .delete(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::DeleteRoleSlug(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let slug = request.slug;
+                let url = format!("{}roles/{}", self.backend, slug);
+                reqwest::Client::new()
+                    .delete(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::UpdateUser(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let user = user::Model {
+                    id: request.id,
+                    name: request.name.0
+                };
+                let url = format!("{}users/{}", self.backend, request.id);
+                reqwest::Client::new()
+                    .put(url)
+                    .body(serde_json::to_string(&user).unwrap())
+                    .header("Content-Type", "application/json")
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::UpdateRole(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let role = entities::role::Model {
+                    slug: request.slug.0.clone(),
+                    name: request.name.map(|name| name.0),
+                    permissions: request.permissions.map(|permissions| permissions.0)
+                };
+                let url = format!("{}roles/{}", self.backend, request.slug.0);
+                reqwest::Client::new()
+                    .put(url)
+                    .body(serde_json::to_string(&role).unwrap())
+                    .header("Content-Type", "application/json")
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::AssignRole(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let id = request.id;
+                let slug = request.slug.0;
+                let url = format!("{}users/{}/assign/{}", self.backend, id, slug);
+                reqwest::Client::new()
+                    .post(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::UnassignRole(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let id = request.id;
+                let slug = request.slug.0;
+                let url = format!("{}users/{}/unassign/{}", self.backend, id, slug);
+                reqwest::Client::new()
+                    .post(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::ShowUsers(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let url = format!("{}users/", self.backend);
+                reqwest::Client::new()
+                    .get(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::ShowRoles(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let url = format!("{}roles/", self.backend);
+                reqwest::Client::new()
+                    .get(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::ShowUser(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let id = request.id.0;
+                let url = format!("{}users/{}", self.backend, id);
+                reqwest::Client::new()
+                    .get(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
             CliCommand::ShowRole(request) => {
-                self.send_json_to_backend_root(serde_json::to_string(&request).unwrap()).await
+                let slug = request.slug.0;
+                let url = format!("{}roles/{}", self.backend, slug);
+                reqwest::Client::new()
+                    .get(url)
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap()
             }
         }
     }

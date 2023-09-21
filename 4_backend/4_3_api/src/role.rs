@@ -1,9 +1,11 @@
 use actix_web::{delete, Error, error, get, HttpResponse, post, put, web};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter};
 use sea_orm::ActiveValue::Set;
+use utoipa::OpenApi;
 use entities::prelude::*;
-use entities::role;
+use entities::{role, user};
 use crate::SharedDb;
+use role::Model as Role;
 
 
 pub fn roles_config(cfg: &mut web::ServiceConfig) {
@@ -15,6 +17,26 @@ pub fn roles_config(cfg: &mut web::ServiceConfig) {
 
 }
 
+#[derive(OpenApi)]
+#[openapi(components(schemas(Role)),
+        paths(
+        show_roles,
+        show_role,
+        create_role,
+        update_role,
+        delete_role
+        )
+)]
+pub struct RoleDocs;
+
+
+#[utoipa::path(
+    context_path = "/roles",
+    responses(
+    (status = OK, body = Vec<Model>, description = "List of roles"),
+    (status = INTERNAL_SERVER_ERROR, description = "Internal server error")
+    )
+)]
 #[get("/")]
 async fn show_roles(data: web::Data<SharedDb>) -> Result<HttpResponse, Error> {
     let roles = role::Entity::find()
@@ -29,6 +51,17 @@ async fn show_roles(data: web::Data<SharedDb>) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().json(roles))
 }
 
+#[utoipa::path(
+    context_path = "/roles",
+    responses(
+    (status = OK, body = Model, description = "Role"),
+    (status = NOT_FOUND, description = "Role not found"),
+    (status = INTERNAL_SERVER_ERROR, description = "Internal server error")
+    ),
+    params(
+        ("slug" = String, Path, description = "Role slug")
+    )
+)]
 #[get("/{slug}")]
 async fn show_role(data: web::Data<SharedDb>, slug: web::Path<String>) -> Result<HttpResponse, Error> {
     let role = role::Entity::find()
@@ -47,8 +80,17 @@ async fn show_role(data: web::Data<SharedDb>, slug: web::Path<String>) -> Result
     Ok(HttpResponse::Ok().json(role))
 }
 
+#[utoipa::path(
+    context_path = "/roles",
+    request_body = Model,
+    responses(
+    (status = OK, body = String, description = "Role inserted slug"),
+    (status = INTERNAL_SERVER_ERROR, description = "Internal server error")
+    )
+)]
 #[post("/")]
 async fn create_role(data: web::Data<SharedDb>, role: web::Json<role::Model>) -> Result<HttpResponse, Error> {
+    let slug = role.slug.clone();
     let active_role: role::ActiveModel = role.into_inner().into_active_model();
     let role = role::Entity::insert(active_role)
         .exec(&data.db)
@@ -59,9 +101,21 @@ async fn create_role(data: web::Data<SharedDb>, role: web::Json<role::Model>) ->
     }
     let role = role.unwrap();
 
-    Ok(HttpResponse::Ok().json(role.last_insert_id))
+    Ok(HttpResponse::Ok().json(slug))
 }
 
+#[utoipa::path(
+    context_path = "/roles",
+    request_body = Model,
+    responses(
+    (status = OK, body = Model, description = "Role"),
+    (status = BAD_REQUEST, description = "Role does not exist"),
+    (status = INTERNAL_SERVER_ERROR, description = "Internal server error")
+    ),
+    params(
+        ("slug" = String, Path, description = "Role slug")
+    )
+)]
 #[put("/{slug}")]
 async fn update_role(data: web::Data<SharedDb>, slug: web::Path<String>, req_role: web::Json<role::Model>) -> Result<HttpResponse, Error> {
     let slug = slug.into_inner();
@@ -96,6 +150,17 @@ async fn update_role(data: web::Data<SharedDb>, slug: web::Path<String>, req_rol
     Ok(HttpResponse::Ok().json(role))
 }
 
+#[utoipa::path(
+    context_path = "/roles",
+    responses(
+    (status = OK, body = String, description = "Role deleted slug"),
+    (status = BAD_REQUEST, description = "Role does not exist"),
+    (status = INTERNAL_SERVER_ERROR, description = "Internal server error")
+    ),
+    params(
+        ("slug" = String, Path, description = "Role slug")
+    )
+)]
 #[delete("/{slug}")]
 async fn delete_role(data: web::Data<SharedDb>, slug: web::Path<String>) -> Result<HttpResponse, Error> {
     let slug = slug.into_inner();

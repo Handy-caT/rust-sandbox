@@ -104,10 +104,62 @@ Rework [the task from the previous step](../4_1_db/README.md#task) in a [client-
 
 After completing everything above, you should be able to answer (and understand why) the following questions:
 - What is HTTP? What does HTTP/2 imply? What does HTTP/3 imply?
+
+a. Head-of-line blocking: Each HTTP/1.x connection could handle only one request at a time. This limitation often led to inefficient use of network resources, as subsequent requests had to wait for the previous request to complete.
+
+b. Lack of prioritization: HTTP/1.x did not offer a way to prioritize requests, which could lead to less critical resources blocking more important ones.
+
+c. There are other problems, such as plain text headers being sent that are large, especially when cookies are in use.
+
+All of these issues have a large performance impact, especially on the modern web.
+
+In HTTP/2 that works a little differently. Using multiplexing, the browser effectively requests the assets together, and then receives them in the same way, all on the same connection.
+
+Header compression: HTTP/2 uses the HPACK algorithm to compress request and response headers, significantly reducing the amount of data transmitted.
+
+Server push: With HTTP/2, servers can proactively push resources to the client's cache before they are requested, reducing latency and improving the overall user experience.
+
+Stream prioritization: HTTP/2 enables clients to prioritize requests, allowing more critical resources to be fetched and rendered first.
+
+Binary framing: HTTP/2 uses a binary framing layer to encapsulate messages, which makes the protocol more efficient and less error-prone compared to the plain-text approach of HTTP/1.x.
+
+HTTP/2 relies on the same underlying protocol in order to operate: TCP.
+
+HTTP/3 does away with TCP, and instead utilises a flavour of UDP called Quick UDP Internet Connections, or 'QUIC'
+
+QUIC has a few benefits:
+
+Built-in encryption: QUIC incorporates Transport Layer Security (TLS) 1.3 by default, ensuring a secure connection without the need for a separate TLS handshake. This reduces latency and improves connection establishment time.
+
+Reduced head-of-line blocking: Unlike TCP, QUIC handles packet loss at the individual stream level. This means that the loss of a single packet does not block the entire connection, further reducing head-of-line blocking issues.
+
+Connection migration: QUIC is designed to better support connection migration, allowing clients to change IP addresses without losing connectivity or incurring additional latency. Something that users on mobile/celluar connections will benefit from in particular.
+
+0-RTT connection establishment: QUIC enables 0-RTT (zero round trip time) connection establishment in certain situations, which can significantly reduce latency when connecting to a previously visited server.
+
+Improved congestion control: QUIC offers more advanced congestion control mechanisms, allowing it to better adapt to varying network conditions and improve overall performance.
+
+Many large networks don't support UDP at all, so piping traffic around on a new protocol that sits on top of UDP is potentially a way off.
+
 - How do work-stealing and thread-per-core paradigms affect programming a web server in practice? Which one is better and when? When does this question (choosing) become meaningful, in practice?
+
+
+
 - What are common crates for making HTTP requests in [Rust]? Which trade-offs do they have?
+
+
+
 - What is WebSocket? How is it used and when? How does it work, in a nutshell?
 
+WebSocket is a computer communications protocol, providing full-duplex communication channels over a single TCP connection.
+
+Мы подключаем WS один раз, а затем сервер может отдавать нам ответы тогда, когда посчитает нужным:
+Первое что мы делаем — отправляем обычный TCP-запрос на сервер, мы говорим, что хотим подключиться к серверу и ждём от него ответа. Такой процесс называется “рукопожатие” (Handshake), он используется повсеместно, например когда вы подключаетесь к роутеру ваш телефон отправляем запрос роутеру с ключами, роутер отвечает ОК и вы успешно подключаетесь.
+Затем происходит обмен данными: допустим один из множества клиентов отправил HTTP-запрос серверу и нужно отдать ответ не только одному клиенту, а целой сети! Сервер в таком случае отдаст обычный ответ отправителю запроса, а всем другим пришлёт пакеты по WebSocket-соединению с полезными данными.
+А как сервер узнает, что мы до сих пор подключены?
+Ответ на данный вопрос достаточно легкий — сервер и клиент играют в пинг-понг
+Сервер периодически присылает ответ по WS с просьбой о действии - послать запрос на сервер. Если клиент отвечает до истечения тайм-аута — он подключен, если нет, то происходит разрыв соединения до следующего рукопожатия
+Полезно знать, что все ответы от сервера по WS игнорируются клиентом и сервером, до того как случится рукопожатие
 
 
 

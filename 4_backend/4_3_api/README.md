@@ -127,11 +127,45 @@ Avoid architecture [over-engineering][42] for this task, just use simple, straig
 
 After completing everything above, you should be able to answer (and understand why) the following questions:
 - What is API? What is RPC? How do they relate?
+
+https://medium.com/ankr-network/rpc-vs-api-whats-the-difference-455d253ca08f#:~:text=Although%20you%20may%20have%20heard,means%20by%20which%20they%20communicate.
+
 - What does "code-first" approach mean? What does "schema-first" approach mean? Which advantages and disadvantages do they have?
+
+
+
 - What does REST paradigm mean? What are essentials of RESTful API? Which strengths does it have? What does it lack?  
 - What is OpenAPI? What is Swagger? How do they relate? Why are they beneficial for RESTful API?
+
+OpenAPI 3.0 is an open-source format for describing and documenting APIs.
+
+The easiest way to understand the difference is:
+OpenAPI = Specification
+Swagger = Tools for implementing the specification
+
+The OpenAPI is the official name of the specification.
+Swagger is the name associated with some of the most well-known, and widely used tools for implementing the OpenAPI specification. The Swagger toolset includes a mix of open source, free, and commercial tools, which can be used at different stages of the API lifecycle.
+
+We need to use OpenApi because it allows both humans and computers to discover and understand the capabilities of the service without access to source code, documentation, or through network traffic inspection
+
 - What is GraphQL? Which are strong sides of this technology? What problems does it bring in practice? 
+
+GraphQL is a query language for your API, and a server-side runtime for executing queries using a type system you define for your data. GraphQL isn't tied to any specific database or storage engine and is instead backed by your existing code and data.
+GraphQL can be used to get only fields that you need and no more.
+Minimize data costs so
+Graphql server has one endpoint which serves all the data
+One query can get multiple data objects, so no need to make multiple requests for data
+One query can stop a server if a query is huge
+You will have code duplication in your resolvers
+
+Use cases:
+mobile apps where bandwidth usage matters.
+Applications where nested data needs to be fetched in a single call.
+Composite pattern, where application retrieves data from multiple, different storage APIs
+Proxy pattern on client side; GraphQL can be added as an abstraction on an existing API, so that each end-user can specify response structure based on their needs.
+
 - What is gRPC? What are its strengths? Which are good use-cases for it, and which are not? Why? 
+
 
 
 
