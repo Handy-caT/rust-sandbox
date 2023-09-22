@@ -8,5 +8,7 @@ members = [
     "3_ecosystem/3_*",
     "4_backend",
     "4_backend/4_*",
-    "3_ecosystem/3_2_macro/my_proc_macros_lib"
+    "3_ecosystem/3_2_macro/my_proc_macros_lib",
+    "4_backend/migration",
+    "4_backend/entities",
 ]
