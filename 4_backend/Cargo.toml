@@ -11,3 +11,9 @@ async-graphql-actix-web = "4.0"
 sea-orm = {version = "0.12.2", features = ["sqlx-postgres", "runtime-tokio-rustls"]}
 entities = {path = "entities"}
 migration = {path = "migration"}
+tracing = "0.1.37"
+argon2 = "0.5.2"
+rand = {version = "0.8.5", features = ["default"]}
+rand_hc = "0.3.2"
+secrecy = { version = "0.8.0", features = ["alloc", "serde", "bytes"] }
+serde = { version = "1.0.188", features = ["derive"] }
