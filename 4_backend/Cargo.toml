@@ -17,3 +17,9 @@ rand = {version = "0.8.5", features = ["default"]}
 rand_hc = "0.3.2"
 secrecy = { version = "0.8.0", features = ["alloc", "serde", "bytes"] }
 serde = { version = "1.0.188", features = ["derive"] }
+jsonwebtoken = "8.3.0"
+jwt = "0.16.0"
+hmac = "0.12.1"
+sha2 = {version = "0.10.7"}
+time = "0.3.29"
+async-trait = "0.1.73"

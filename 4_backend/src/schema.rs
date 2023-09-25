@@ -1,12 +1,14 @@
-use std::io::Error;
-use async_graphql::{Context, Object};
+use async_graphql::{Context, Error, Object};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use async_graphql::Result;
 use sea_orm::ActiveValue::Set;
+use secrecy::SecretString;
 use entities::user;
 use entities::prelude::*;
-use crate::hashing::hash_password;
+use crate::hashing::{hash_password, validate_password_hash};
+use crate::token::{Token, ValidTokenGuard};
 
+#[derive(Debug)]
 pub struct User {
     pub id: i32,
     pub name: Option<String>,
@@ -28,6 +30,7 @@ pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
+    #[graphql(guard = "ValidTokenGuard")]
     pub async fn user<'ctx>(&self, ctx: &Context<'ctx>, user_id: Option<i32>) -> Result<Vec<User>> {
         let conn = ctx.data_unchecked::<DatabaseConnection>();
         if user_id.is_some() {
@@ -94,6 +97,16 @@ impl MutationQuery {
             .unwrap();
 
         let hash = user.password_hash.unwrap();
-        Ok(hash)
+        let valid = validate_password_hash(password, hash);
+        if !valid {
+            return Err(Error::new("Authentication failed"))
+        }
+        let token = Token::new(user.id);
+        if token.is_err() {
+            return Err(Error::new("Authentication failed"))
+        }
+        let token = token.unwrap();
+
+        Ok(token.0)
     }
 }
